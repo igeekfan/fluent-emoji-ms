@@ -1,0 +1,58 @@
+{
+  "name": "fluent-emoji-ms",
+  "version": "0.0.2",
+  "description": "A Vue 3 component for selecting Microsoft Fluent Emojis",
+  "author": "igeekfan",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/fluent-emoji-ms.umd.js",
+  "module": "./dist/fluent-emoji-ms.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fluent-emoji-ms.es.js",
+      "require": "./dist/fluent-emoji-ms.umd.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:lib && npm run build:web",
+    "build:lib": "vite build --mode lib",
+    "build:web": "vite build --mode web",
+    "preview": "vite preview",
+    "generate-emoji-list": "node scripts/generate-emoji-list.js",
+    "deploy": "npm run build:web && node scripts/deploy-gh-pages.js",
+    "publish-npm": "node scripts/publish-npm.js"
+  },
+  "dependencies": {
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.8",
+    "vite-plugin-dts": "^3.0.3",
+    "vue-tsc": "^1.8.8"
+  },
+  "keywords": [
+    "emoji",
+    "vue",
+    "microsoft",
+    "fluent",
+    "fluent-ui",
+    "fluent-emoji",
+    "fluent-emoji-picker",
+    "emoji-picker",
+    "fluent-emoji-ms"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/igeekfan/fluent-emoji-ms"
+  },
+  "homepage": "https://igeekfan.github.io/fluent-emoji-ms/"
+}

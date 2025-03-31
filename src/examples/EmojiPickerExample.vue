@@ -178,9 +178,9 @@ const exampleCode = `<template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import EmojiPicker from 'fluent-emoji-ms/components/EmojiPicker'
-import { emojiCategories } from 'fluent-emoji-ms/data/emoji-categories'
-import { filterEmojisByCategories } from 'fluent-emoji-ms/data/emoji-utils'
+import { EmojiPicker } from 'fluent-emoji-ms'
+import { emojiCategories } from 'fluent-emoji-ms'
+import { filterEmojisByCategories } from 'fluent-emoji-ms'
 
 // 当前选择的分类
 const selectedCategory = ref('smileys')

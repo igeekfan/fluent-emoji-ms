@@ -35,6 +35,7 @@ const basicUsageCode = `<template>
 <script setup>
 import { ref } from 'vue'
 import { FluentEmojiPicker } from 'fluent-emoji-ms'
+import 'fluent-emoji-ms/style.css'
 import type { EmojiItemWithStyle } from 'fluent-emoji-ms'
 
 // 设置CDN基础URL

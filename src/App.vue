@@ -67,38 +67,44 @@ onMounted(() => {
         <h1 class="title">Fluent Emoji MS 示例</h1>
         <p class="description">Vue 3 组件库，用于在应用中集成微软 Fluent UI 表情符号</p>
       </div>
-      
+
       <div class="header-actions">
-        <button @click="toggleCdnConfig" class="cdn-config-toggle" :class="{ active: showCdnConfig }">
+        <!-- CDN 设置按钮 -->
+        <a @click="toggleCdnConfig"
+          class="action-button"
+          :class="{ active: showCdnConfig }">
           <span class="icon">⚙️</span>
           <span class="text">CDN 设置</span>
-        </button>
+        </a>
+        <!-- GitHub 按钮 -->
+        <a class="action-button" target="_blank" href='https://github.com/igeekfan/fluent-emoji-ms'>
+          <span class="icon">🌐</span>
+          <span class="text">GitHub 主页</span>
+        </a>
       </div>
     </header>
-    
+
     <!-- 全局 CDN 配置面板 -->
-    <div v-if="showCdnConfig" class="global-cdn-panel">
+    <div v-if="showCdnConfig"
+      class="global-cdn-panel">
       <div class="panel-header">
         <h3>全局 CDN 配置</h3>
         <p class="panel-description">所有示例将使用相同的 CDN 配置获取表情图标</p>
-        <button @click="toggleCdnConfig" class="close-panel">×</button>
+        <button @click="toggleCdnConfig"
+          class="close-panel">×</button>
       </div>
-      
+
       <div class="panel-content">
-        <CdnSelector 
-          :modelValue="config.cdn.baseUrl"
-          @update:modelValue="updateCdnUrl"
-        />
+        <CdnSelector :modelValue="config.cdn.baseUrl"
+          @update:modelValue="updateCdnUrl" />
       </div>
     </div>
 
     <div class="example-tabs">
-      <button 
-        v-for="example in examples" 
+      <button v-for="example in examples"
         :key="example.id"
         :class="['tab-button', { active: currentExample === example.id }]"
-        @click="switchExample(example.id)"
-      >
+        @click="switchExample(example.id)">
         {{ example.name }}
       </button>
     </div>
@@ -109,7 +115,7 @@ onMounted(() => {
           <h2>{{ currentExampleObj.name }}</h2>
           <p>{{ currentExampleObj.description }}</p>
         </div>
-        
+
         <!-- 动态组件，根据currentExample切换 -->
         <component :is="currentExampleObj.component" />
       </div>
@@ -117,13 +123,20 @@ onMounted(() => {
 
     <footer class="footer">
       <p>
-        <a href="https://github.com/microsoft/fluentui-emoji" target="_blank">Fluent UI Emoji</a> 
-        由 Microsoft 提供 | 
-        <a href="https://github.com/yourusername/fluent-emoji-ms" target="_blank">Fluent Emoji MS</a>
+        <a href="https://github.com/microsoft/fluentui-emoji"
+          target="_blank">Fluent UI Emoji</a>
+        由 Microsoft 提供 |
+        <a href="https://github.com/igeekfan/fluent-emoji-ms"
+          target="_blank">Fluent Emoji MS</a>
         组件库
       </p>
       <p>
-        <button @click="toggleCdnConfig" class="footer-cdn-button">
+        <a href="https://github.com/igeekfan"
+          target="_blank">GitHub 主页</a>
+      </p>
+      <p>
+        <button @click="toggleCdnConfig"
+          class="footer-cdn-button">
           配置 CDN 设置
         </button>
       </p>
@@ -152,6 +165,27 @@ body {
   padding: 20px;
 }
 
+/* 添加 GitHub 按钮样式 */
+.github-banner {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.github-button {
+  padding: 8px 16px;
+  background-color: #4d6af2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.github-button:hover {
+  background-color: #3a51c7;
+}
+
 /* 头部样式 */
 .header {
   display: flex;
@@ -170,34 +204,35 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  margin-left: 20px;
+  gap: 10px; /* 按钮间距 */
 }
 
-.cdn-config-toggle {
+.action-button {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 8px 16px;
   background-color: #f3f4f6;
+  color: #4b5563;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 8px 12px;
   font-size: 14px;
-  color: #4b5563;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
 }
 
-.cdn-config-toggle.active {
+.action-button:hover {
+  background-color: #e5e7eb;
+}
+
+.action-button.active {
   background-color: #e5edff;
   border-color: #3b82f6;
   color: #3b82f6;
 }
 
-.cdn-config-toggle:hover {
-  background-color: #e5e7eb;
-}
-
-.cdn-config-toggle .icon {
+.action-button .icon {
   font-size: 16px;
 }
 
@@ -376,6 +411,38 @@ body {
 
 .panel-content {
   padding: 20px;
+}
+
+.github-link {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.github-link a {
+  color: #4d6af2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.github-link a:hover {
+  text-decoration: underline;
+}
+
+.github-button {
+  display: block;
+  margin: 0 auto 10px;
+  padding: 8px 16px;
+  background-color: #4d6af2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.github-button:hover {
+  background-color: #3a51c7;
 }
 
 @keyframes slideDown {

@@ -312,18 +312,20 @@ This repository no longer uses local publish scripts or local gh-pages push scri
 ### Demo site deployment
 
 - Workflow: [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
-- Trigger: pushes to `main` / `master`, plus manual workflow_dispatch
+- Trigger: pushes to the repository default branch, plus manual workflow_dispatch from the default branch
 - Deployment mode: official GitHub Pages Actions, publishing the `dist/web` artifact
+- Workflow environment: `pages-production`
 
 Required repository settings:
 
 1. Set GitHub Pages source to GitHub Actions
-2. Keep Actions permissions enabled for Pages deployment
+2. If you add protection rules to the `pages-production` environment, allow the repository default branch; in this repository the current default branch is `master`
+3. Keep Actions permissions enabled for Pages deployment
 
 ### npm publishing
 
 - Workflow: [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml)
-- Trigger: manual workflow_dispatch
+- Trigger: manual workflow_dispatch from the repository default branch
 - Publish order: @fluent-emoji-ms/core -> @fluent-emoji-ms/vue -> @fluent-emoji-ms/react -> @fluent-emoji-ms/svelte
 
 Required repository configuration:

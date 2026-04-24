@@ -312,18 +312,20 @@ pnpm generate-emoji-list
 ### Demo 站点部署
 
 - 工作流文件：[.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
-- 触发方式：推送到 `main` / `master`，或手动执行 workflow_dispatch
+- 触发方式：推送到仓库默认分支，或从默认分支手动执行 workflow_dispatch
 - 部署方式：使用 GitHub 官方 Pages Actions，从 `dist/web` 上传产物并发布
+- 工作流环境：`pages-production`
 
 仓库需要的设置：
 
 1. 在 GitHub Pages 设置中把 Source 改为 GitHub Actions
-2. 保持仓库 Actions 权限允许 workflow 写入 Pages
+2. 如果你给 `pages-production` 环境加了保护规则，放行仓库默认分支；当前仓库默认分支是 `master`
+3. 保持仓库 Actions 权限允许 workflow 写入 Pages
 
 ### npm 发包
 
 - 工作流文件：[.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml)
-- 触发方式：手动执行 workflow_dispatch
+- 触发方式：从仓库默认分支手动执行 workflow_dispatch
 - 发布顺序：@fluent-emoji-ms/core -> @fluent-emoji-ms/vue -> @fluent-emoji-ms/react -> @fluent-emoji-ms/svelte
 
 仓库需要的配置：

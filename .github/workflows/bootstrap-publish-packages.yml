@@ -71,15 +71,15 @@ jobs:
 
       - name: Ensure bootstrap token exists
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN || secrets.NPM_TOKEN }}
         run: |
           if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
-            echo "Missing repository secret NPM_PUBLISH_TOKEN."
-            echo "Create a temporary granular npm token with publish permission for the first bootstrap release."
+            echo "Missing repository secret NPM_PUBLISH_TOKEN or NPM_TOKEN."
+            echo "Create a temporary granular npm token with publish permission for the first bootstrap release and store it in one of those secrets."
             exit 1
           fi
 
       - name: Bootstrap publish unpublished packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN || secrets.NPM_TOKEN }}
         run: node scripts/publish-trusted-packages.js --tag "${{ inputs.npm_tag }}" --no-provenance

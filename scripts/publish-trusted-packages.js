@@ -167,7 +167,7 @@ function packPackage(packageInfo, outputDir) {
     throw new Error(`Unable to determine tarball name for ${packageInfo.name}`)
   }
 
-  return path.join(outputDir, fileName)
+  return path.isAbsolute(fileName) ? fileName : path.join(outputDir, fileName)
 }
 
 function publishTarball(packageInfo, tarballPath) {

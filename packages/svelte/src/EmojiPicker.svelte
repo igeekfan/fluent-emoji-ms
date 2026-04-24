@@ -9,7 +9,7 @@
     type EmojiLocale,
     type EmojiPresetKey,
     type EmojiItem
-  } from '@fluent-emoji-ms/core'
+  } from '@igeekfan/fluent-emoji-ms-core'
 
   export let baseUrl = DEFAULT_BASE_URL
   export let width: number | string | undefined = undefined

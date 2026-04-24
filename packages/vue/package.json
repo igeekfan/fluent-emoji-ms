@@ -1,5 +1,5 @@
 {
-  "name": "@fluent-emoji-ms/vue",
+  "name": "@igeekfan/fluent-emoji-ms-vue",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/fluent-emoji-ms-vue.js",
@@ -12,6 +12,11 @@
     },
     "./style.css": "./dist/style.css"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igeekfan/fluent-emoji-ms.git",
+    "directory": "packages/vue"
+  },
   "files": [
     "dist"
   ],
@@ -19,7 +24,7 @@
     "build": "pnpm exec vite build"
   },
   "dependencies": {
-    "@fluent-emoji-ms/core": "workspace:*"
+    "@igeekfan/fluent-emoji-ms-core": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.3.4"

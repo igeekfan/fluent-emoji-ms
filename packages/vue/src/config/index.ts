@@ -1,4 +1,4 @@
-import { DEFAULT_BASE_URL, DEFAULT_RENDER_BATCH_SIZE } from '@fluent-emoji-ms/core'
+import { DEFAULT_BASE_URL, DEFAULT_RENDER_BATCH_SIZE } from '@igeekfan/fluent-emoji-ms-core'
 import { reactive, readonly } from 'vue'
 
 const configState = reactive({

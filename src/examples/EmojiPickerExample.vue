@@ -8,7 +8,7 @@ import {
   type EmojiItem,
   type EmojiLocale,
   useEmojiConfig
-} from '@fluent-emoji-ms/vue'
+} from '@igeekfan/fluent-emoji-ms-vue'
 import CodeBlock from './components/CodeBlock.vue'
 
 const props = withDefaults(defineProps<{ locale?: EmojiLocale }>(), {

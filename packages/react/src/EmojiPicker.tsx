@@ -8,7 +8,7 @@ import {
   type EmojiLocale,
   type EmojiPresetKey,
   type EmojiItem
-} from '@fluent-emoji-ms/core'
+} from '@igeekfan/fluent-emoji-ms-core'
 import { useMemo, type CSSProperties } from 'react'
 import './styles.css'
 

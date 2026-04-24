@@ -1,4 +1,4 @@
-import type { EmojiLocale } from '@fluent-emoji-ms/vue'
+import type { EmojiLocale } from '@igeekfan/fluent-emoji-ms-vue'
 
 const demoMessages = {
   'zh-CN': {

@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import { FluentEmojiPlugin } from '@fluent-emoji-ms/vue'
+import { FluentEmojiPlugin } from '@igeekfan/fluent-emoji-ms-vue'
 
 const app = createApp(App)
 

@@ -21,7 +21,7 @@ export default defineConfig({
       formats: ['es']
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@fluent-emoji-ms/core'],
+      external: ['react', 'react-dom', '@igeekfan/fluent-emoji-ms-core'],
       output: {
         globals: {
           react: 'React'

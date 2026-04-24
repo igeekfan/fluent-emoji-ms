@@ -9,15 +9,15 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run build:packages && pnpm run build:web",
-    "build:packages": "pnpm -r --filter @fluent-emoji-ms/* build",
-    "build:lib": "pnpm --filter @fluent-emoji-ms/vue build",
+    "build:packages": "pnpm -r --filter @igeekfan/fluent-emoji-ms-core --filter @igeekfan/fluent-emoji-ms-vue --filter @igeekfan/fluent-emoji-ms-react --filter @igeekfan/fluent-emoji-ms-svelte build",
+    "build:lib": "pnpm --filter @igeekfan/fluent-emoji-ms-vue build",
     "build:web": "vite build --mode web",
-    "test:core": "pnpm --filter @fluent-emoji-ms/core test",
+    "test:core": "pnpm --filter @igeekfan/fluent-emoji-ms-core test",
     "preview": "vite preview",
     "generate-emoji-list": "node scripts/generate-emoji-list.js"
   },
   "dependencies": {
-    "@fluent-emoji-ms/vue": "workspace:*",
+    "@igeekfan/fluent-emoji-ms-vue": "workspace:*",
     "vue": "^3.3.4"
   },
   "devDependencies": {

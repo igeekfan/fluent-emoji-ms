@@ -1,4 +1,4 @@
-import type { EmojiItemWithStyle, EmojiLocale, EmojiPresetKey } from '@fluent-emoji-ms/core'
+import type { EmojiItemWithStyle, EmojiLocale, EmojiPresetKey } from '@igeekfan/fluent-emoji-ms-core'
 
 export interface FluentEmojiPickerProps {
   disabled?: boolean

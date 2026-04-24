@@ -1,4 +1,4 @@
-export * from '@fluent-emoji-ms/core'
+export * from '@igeekfan/fluent-emoji-ms-core'
 export { EmojiPicker } from './EmojiPicker'
 export type { EmojiPickerProps } from './EmojiPicker'
 export { FluentEmojiPicker } from './FluentEmojiPicker'

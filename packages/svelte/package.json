@@ -1,5 +1,5 @@
 {
-  "name": "@fluent-emoji-ms/svelte",
+  "name": "@igeekfan/fluent-emoji-ms-svelte",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/fluent-emoji-ms-svelte.js",
@@ -12,6 +12,11 @@
     },
     "./style.css": "./dist/style.css"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igeekfan/fluent-emoji-ms.git",
+    "directory": "packages/svelte"
+  },
   "files": [
     "dist"
   ],
@@ -19,7 +24,7 @@
     "build": "pnpm exec vite build && pnpm exec tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@fluent-emoji-ms/core": "workspace:*"
+    "@igeekfan/fluent-emoji-ms-core": "workspace:*"
   },
   "peerDependencies": {
     "svelte": "^4.0.0 || ^5.0.0"

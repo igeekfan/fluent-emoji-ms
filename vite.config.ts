@@ -29,8 +29,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
-        '@fluent-emoji-ms/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
-        '@fluent-emoji-ms/vue': path.resolve(__dirname, 'packages/vue/src/index.ts')
+        '@igeekfan/fluent-emoji-ms-core': path.resolve(__dirname, 'packages/core/src/index.ts'),
+        '@igeekfan/fluent-emoji-ms-vue': path.resolve(__dirname, 'packages/vue/src/index.ts')
       }
     }
   }

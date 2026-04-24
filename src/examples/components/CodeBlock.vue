@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { EmojiLocale } from '@fluent-emoji-ms/vue'
+import type { EmojiLocale } from '@igeekfan/fluent-emoji-ms-vue'
 import { getDemoMessages } from '../demo-locale'
 
 const props = defineProps({

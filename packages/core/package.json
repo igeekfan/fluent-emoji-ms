@@ -1,5 +1,5 @@
 {
-  "name": "@fluent-emoji-ms/core",
+  "name": "@igeekfan/fluent-emoji-ms-core",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igeekfan/fluent-emoji-ms.git",
+    "directory": "packages/core"
   },
   "files": [
     "dist"

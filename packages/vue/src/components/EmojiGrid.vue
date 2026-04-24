@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { buildEmojiImageUrl, type EmojiItem } from '@fluent-emoji-ms/core'
+import { buildEmojiImageUrl, type EmojiItem } from '@igeekfan/fluent-emoji-ms-core'
 import { computed } from 'vue'
 
 const props = withDefaults(defineProps<{

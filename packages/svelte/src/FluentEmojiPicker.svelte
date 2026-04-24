@@ -13,7 +13,7 @@
     type EmojiPresetKey,
     type EmojiItem,
     type EmojiItemWithStyle
-  } from '@fluent-emoji-ms/core'
+  } from '@igeekfan/fluent-emoji-ms-core'
   import { createEventDispatcher } from 'svelte'
   import EmojiPicker from './EmojiPicker.svelte'
   import type { FluentEmojiPickerProps, SelectEventDetail } from './types'

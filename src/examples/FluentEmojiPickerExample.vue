@@ -11,7 +11,7 @@ import {
   type EmojiLocale,
   type EmojiPresetKey,
   useEmojiConfig
-} from '@fluent-emoji-ms/vue'
+} from '@igeekfan/fluent-emoji-ms-vue'
 import CodeBlock from './components/CodeBlock.vue'
 
 type ConfigTab = 'basic' | 'layout' | 'content' | 'advanced'

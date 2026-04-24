@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
-      "@fluent-emoji-ms/core": [
+      "@igeekfan/fluent-emoji-ms-core": [
         "../core/src/index.ts"
       ]
     }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { FluentEmojiPicker, buildEmojiImageUrl, type EmojiItemWithStyle, type EmojiLocale, useEmojiConfig } from '@fluent-emoji-ms/vue'
+import { FluentEmojiPicker, buildEmojiImageUrl, type EmojiItemWithStyle, type EmojiLocale, useEmojiConfig } from '@igeekfan/fluent-emoji-ms-vue'
 import CodeBlock from './components/CodeBlock.vue'
 
 type ChatMessage = {

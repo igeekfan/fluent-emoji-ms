@@ -25,10 +25,10 @@ The demo site under src/examples consumes the workspace packages directly. It is
 
 | Path | Package | Purpose |
 | --- | --- | --- |
-| packages/core | @fluent-emoji-ms/core | Shared data, types, presets, filtering, and state logic |
-| packages/vue | @fluent-emoji-ms/vue | Vue 3 components |
-| packages/react | @fluent-emoji-ms/react | React components |
-| packages/svelte | @fluent-emoji-ms/svelte | Svelte components |
+| packages/core | @igeekfan/fluent-emoji-ms-core | Shared data, types, presets, filtering, and state logic |
+| packages/vue | @igeekfan/fluent-emoji-ms-vue | Vue 3 components |
+| packages/react | @igeekfan/fluent-emoji-ms-react | React components |
+| packages/svelte | @igeekfan/fluent-emoji-ms-svelte | Svelte components |
 | src/examples | - | Demo site examples |
 
 ## Installation
@@ -43,37 +43,37 @@ pnpm dev
 ### Vue package
 
 ```bash
-pnpm add @fluent-emoji-ms/vue
+pnpm add @igeekfan/fluent-emoji-ms-vue
 ```
 
 ```ts
-import '@fluent-emoji-ms/vue/style.css'
+import '@igeekfan/fluent-emoji-ms-vue/style.css'
 ```
 
 ### React package
 
 ```bash
-pnpm add @fluent-emoji-ms/react
+pnpm add @igeekfan/fluent-emoji-ms-react
 ```
 
 ```ts
-import '@fluent-emoji-ms/react/style.css'
+import '@igeekfan/fluent-emoji-ms-react/style.css'
 ```
 
 ### Svelte package
 
 ```bash
-pnpm add @fluent-emoji-ms/svelte
+pnpm add @igeekfan/fluent-emoji-ms-svelte
 ```
 
 ```ts
-import '@fluent-emoji-ms/svelte/style.css'
+import '@igeekfan/fluent-emoji-ms-svelte/style.css'
 ```
 
 ### Core only
 
 ```bash
-pnpm add @fluent-emoji-ms/core
+pnpm add @igeekfan/fluent-emoji-ms-core
 ```
 
 ## Quick Start
@@ -83,8 +83,8 @@ pnpm add @fluent-emoji-ms/core
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
-import { FluentEmojiPicker, type EmojiItemWithStyle } from '@fluent-emoji-ms/vue'
-import '@fluent-emoji-ms/vue/style.css'
+import { FluentEmojiPicker, type EmojiItemWithStyle } from '@igeekfan/fluent-emoji-ms-vue'
+import '@igeekfan/fluent-emoji-ms-vue/style.css'
 
 const selectedEmoji = ref<EmojiItemWithStyle | null>(null)
 </script>
@@ -102,8 +102,8 @@ const selectedEmoji = ref<EmojiItemWithStyle | null>(null)
 
 ```tsx
 import { useState } from 'react'
-import { FluentEmojiPicker, type EmojiItemWithStyle } from '@fluent-emoji-ms/react'
-import '@fluent-emoji-ms/react/style.css'
+import { FluentEmojiPicker, type EmojiItemWithStyle } from '@igeekfan/fluent-emoji-ms-react'
+import '@igeekfan/fluent-emoji-ms-react/style.css'
 
 export function App() {
   const [selectedEmoji, setSelectedEmoji] = useState<EmojiItemWithStyle | null>(null)
@@ -122,8 +122,8 @@ export function App() {
 
 ```svelte
 <script lang="ts">
-  import { FluentEmojiPicker } from '@fluent-emoji-ms/svelte'
-  import '@fluent-emoji-ms/svelte/style.css'
+  import { FluentEmojiPicker } from '@igeekfan/fluent-emoji-ms-svelte'
+  import '@igeekfan/fluent-emoji-ms-svelte/style.css'
 
   let selectedEmoji = null
 </script>
@@ -244,7 +244,7 @@ The low-level picker only renders the results grid and the load-more action. It 
 
 ## Core Exports
 
-@fluent-emoji-ms/core currently exports:
+@igeekfan/fluent-emoji-ms-core currently exports:
 
 - emojiStyles
 - emojiCategories
@@ -326,12 +326,53 @@ Required repository settings:
 
 - Workflow: [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml)
 - Trigger: manual workflow_dispatch from the repository default branch
-- Publish order: @fluent-emoji-ms/core -> @fluent-emoji-ms/vue -> @fluent-emoji-ms/react -> @fluent-emoji-ms/svelte
+- Publish order: @igeekfan/fluent-emoji-ms-core -> @igeekfan/fluent-emoji-ms-vue -> @igeekfan/fluent-emoji-ms-react -> @igeekfan/fluent-emoji-ms-svelte
+
+First-release limitation:
+
+- npm Trusted Publishing currently cannot reliably bootstrap a package that has never existed on npm before
+- If these four packages do not have any published versions yet, run [.github/workflows/bootstrap-publish-packages.yml](.github/workflows/bootstrap-publish-packages.yml) once first
+- After at least one version exists for each package, switch back to [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml) for normal OIDC trusted publishing
+
+Bootstrap workflow details:
+
+- Workflow: [.github/workflows/bootstrap-publish-packages.yml](.github/workflows/bootstrap-publish-packages.yml)
+- Purpose: publish only the current versions that do not exist on npm yet, without bumping versions or pushing git tags
+- Required GitHub secret: `NPM_PUBLISH_TOKEN`
+- Token type: npm granular access token
+- Token capability: allow publishing the target packages and enable bypass 2FA
+- Recommendation: treat this token as a temporary bootstrap-only credential and delete the secret after the first successful release of all four packages
+
+Package-name and account prerequisite:
+
+- All four packages now publish under the `@igeekfan` scope
+- The package names are `@igeekfan/fluent-emoji-ms-core`, `@igeekfan/fluent-emoji-ms-vue`, `@igeekfan/fluent-emoji-ms-react`, and `@igeekfan/fluent-emoji-ms-svelte`
+- The publishing account must be the actual npm owner of that scope; for this repository that account is `igeekfan`
+- If npm returns `Scope not found`, the `@igeekfan` scope is not available for publishing yet, or the token belongs to a different npm account
 
 Required repository configuration:
 
-1. Add a GitHub Actions secret named `NPM_TOKEN`
-2. If branch protection is strict, allow the GitHub Actions bot to push version commits and tags
+1. Configure npm Trusted Publisher for each of these four packages:
+2. `@igeekfan/fluent-emoji-ms-core`
+3. `@igeekfan/fluent-emoji-ms-vue`
+4. `@igeekfan/fluent-emoji-ms-react`
+5. `@igeekfan/fluent-emoji-ms-svelte`
+6. If branch protection is strict, allow the GitHub Actions bot to push version commits and tags
+
+npm Trusted Publisher values:
+
+- Provider: GitHub Actions
+- Organization or user: `igeekfan`
+- Repository: `fluent-emoji-ms`
+- Workflow filename: `publish-packages.yml`
+- Environment name: leave it blank; the publish workflow does not use a GitHub environment
+
+Notes:
+
+- A GitHub Actions `NPM_TOKEN` secret is no longer required for publishing
+- The trusted publishing workflow now fails fast when a package does not exist on npm yet and tells you to run the bootstrap workflow first
+- The workflow now relies on GitHub OIDC, which requires a GitHub-hosted runner, `id-token: write`, Node 24, and npm 11
+- The publishable package manifests now include `repository.url` and `repository.directory`, which npm uses to validate trusted publishing
 
 Workflow inputs:
 
@@ -350,6 +391,29 @@ Workflow behavior:
 6. Push the release commit and create a `vX.Y.Z` tag
 
 Note: after the publish workflow pushes its release commit, the Pages workflow will run automatically, so the demo site stays aligned with the latest released commit.
+
+Recommended sequence:
+
+1. Configure npm Trusted Publisher for all four packages
+2. Add the temporary repository secret `NPM_PUBLISH_TOKEN`
+3. Run [.github/workflows/bootstrap-publish-packages.yml](.github/workflows/bootstrap-publish-packages.yml) once to create the first npm releases
+4. Delete `NPM_PUBLISH_TOKEN` after the bootstrap release succeeds
+5. Use [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml) for all future releases
+
+If npm logs show errors like:
+
+- `Two-factor authentication or granular access token with bypass 2fa enabled is required`
+- `For automation or CI/CD uses, please use Trusted Publishing instead`
+
+then the package has not been linked to npm Trusted Publisher yet, or the configured workflow filename does not exactly match `publish-packages.yml`.
+
+If [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml) fails with:
+
+- `Trusted publishing cannot bootstrap brand-new npm packages that do not exist yet`
+
+then the packages do not have any published npm history yet. Run [.github/workflows/bootstrap-publish-packages.yml](.github/workflows/bootstrap-publish-packages.yml) once first.
+
+If npm fails with permission-related errors, first verify that both `NPM_PUBLISH_TOKEN` and the Trusted Publisher connection are using the `igeekfan` npm account, and that this account has publish access to the `@igeekfan` scope.
 
 ## License
 

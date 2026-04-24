@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, markRaw, onMounted, ref, watch } from 'vue'
-import { type EmojiLocale, useEmojiConfig } from '@fluent-emoji-ms/vue'
+import { type EmojiLocale, useEmojiConfig } from '@igeekfan/fluent-emoji-ms-vue'
 import CdnSelector from './examples/components/CdnSelector.vue'
 import { getDemoMessages } from './examples/demo-locale'
 import {

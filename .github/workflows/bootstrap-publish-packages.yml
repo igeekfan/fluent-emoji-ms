@@ -1,0 +1,85 @@
+name: Bootstrap Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: npm dist-tag for the bootstrap release
+        required: true
+        default: latest
+        type: string
+      generate_emoji_list:
+        description: Run pnpm generate-emoji-list before publishing
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bootstrap-publish-packages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure release branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ -z "${DEFAULT_BRANCH}" ]]; then
+            echo "Unable to resolve the repository default branch."
+            exit 1
+          fi
+          if [[ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]]; then
+            echo "This workflow must be run from the default branch: ${DEFAULT_BRANCH}."
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate emoji list
+        if: ${{ inputs.generate_emoji_list }}
+        run: pnpm generate-emoji-list
+
+      - name: Run core tests
+        run: pnpm test:core
+
+      - name: Build packages
+        run: pnpm build:packages
+
+      - name: Ensure bootstrap token exists
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: |
+          if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
+            echo "Missing repository secret NPM_PUBLISH_TOKEN."
+            echo "Create a temporary granular npm token with publish permission for the first bootstrap release."
+            exit 1
+          fi
+
+      - name: Bootstrap publish unpublished packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: node scripts/publish-trusted-packages.js --tag "${{ inputs.npm_tag }}" --no-provenance

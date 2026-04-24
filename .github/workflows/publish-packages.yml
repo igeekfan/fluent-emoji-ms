@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: publish-packages
@@ -66,9 +67,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org/
+
+      - name: Upgrade npm for trusted publishing
+        run: |
+          npm install -g npm@11
+          npm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -185,29 +191,8 @@ jobs:
             git commit -m "chore(release): v${RELEASE_VERSION}"
           fi
 
-      - name: Publish core package
-        working-directory: packages/core
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
-
-      - name: Publish Vue package
-        working-directory: packages/vue
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
-
-      - name: Publish React package
-        working-directory: packages/react
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
-
-      - name: Publish Svelte package
-        working-directory: packages/svelte
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
+      - name: Publish packages with npm trusted publishing
+        run: node scripts/publish-trusted-packages.js --tag "${{ inputs.npm_tag }}" --require-existing-packages
 
       - name: Push release commit and tag
         env:

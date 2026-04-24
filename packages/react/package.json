@@ -1,5 +1,5 @@
 {
-  "name": "@fluent-emoji-ms/react",
+  "name": "@igeekfan/fluent-emoji-ms-react",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/fluent-emoji-ms-react.js",
@@ -12,6 +12,11 @@
     },
     "./style.css": "./dist/style.css"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igeekfan/fluent-emoji-ms.git",
+    "directory": "packages/react"
+  },
   "files": [
     "dist"
   ],
@@ -19,7 +24,7 @@
     "build": "pnpm exec vite build"
   },
   "dependencies": {
-    "@fluent-emoji-ms/core": "workspace:*"
+    "@igeekfan/fluent-emoji-ms-core": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

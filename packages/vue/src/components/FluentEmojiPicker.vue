@@ -14,7 +14,7 @@ import {
   type EmojiPresetKey,
   type EmojiItem,
   type EmojiItemWithStyle
-} from '@fluent-emoji-ms/core'
+} from '@igeekfan/fluent-emoji-ms-core'
 import { computed, ref, watch } from 'vue'
 import { config } from '../config'
 import EmojiPicker from './EmojiPicker.vue'

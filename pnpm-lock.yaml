@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@fluent-emoji-ms/vue':
+      '@igeekfan/fluent-emoji-ms-vue':
         specifier: workspace:*
         version: link:packages/vue
       vue:
@@ -45,7 +45,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@fluent-emoji-ms/core':
+      '@igeekfan/fluent-emoji-ms-core':
         specifier: workspace:*
         version: link:../core
       react:
@@ -76,7 +76,7 @@ importers:
 
   packages/svelte:
     dependencies:
-      '@fluent-emoji-ms/core':
+      '@igeekfan/fluent-emoji-ms-core':
         specifier: workspace:*
         version: link:../core
       svelte:
@@ -95,7 +95,7 @@ importers:
 
   packages/vue:
     dependencies:
-      '@fluent-emoji-ms/core':
+      '@igeekfan/fluent-emoji-ms-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

@@ -21,7 +21,7 @@ export default defineConfig({
       formats: ['es']
     },
     rollupOptions: {
-      external: ['vue', '@fluent-emoji-ms/core'],
+      external: ['vue', '@igeekfan/fluent-emoji-ms-core'],
       output: {
         globals: {
           vue: 'Vue'

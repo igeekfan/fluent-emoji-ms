@@ -13,7 +13,7 @@ export default defineConfig({
       formats: ['es']
     },
     rollupOptions: {
-      external: ['svelte', '@fluent-emoji-ms/core'],
+      external: ['svelte', '@igeekfan/fluent-emoji-ms-core'],
       output: {
         assetFileNames: (assetInfo) => {
           if (assetInfo.name?.endsWith('.css')) {

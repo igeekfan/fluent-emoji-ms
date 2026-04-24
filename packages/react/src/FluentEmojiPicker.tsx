@@ -12,7 +12,7 @@ import {
   type EmojiPresetKey,
   type EmojiItem,
   type EmojiItemWithStyle
-} from '@fluent-emoji-ms/core'
+} from '@igeekfan/fluent-emoji-ms-core'
 import {
   startTransition,
   useDeferredValue,

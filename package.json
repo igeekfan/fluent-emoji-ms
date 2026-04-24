@@ -14,11 +14,7 @@
     "build:web": "vite build --mode web",
     "test:core": "pnpm --filter @fluent-emoji-ms/core test",
     "preview": "vite preview",
-    "generate-emoji-list": "node scripts/generate-emoji-list.js",
-    "deploy": "pnpm run build:web && node scripts/deploy-gh-pages.js",
-    "publish:packages": "node scripts/publish-npm.js",
-    "release:packages": "node scripts/publish-npm.js --generate",
-    "publish-npm": "pnpm run publish:packages"
+    "generate-emoji-list": "node scripts/generate-emoji-list.js"
   },
   "dependencies": {
     "@fluent-emoji-ms/vue": "workspace:*",

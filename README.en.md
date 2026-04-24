@@ -296,8 +296,6 @@ pnpm build:packages
 pnpm build:web
 pnpm test:core
 pnpm generate-emoji-list
-pnpm publish:packages
-pnpm release:packages
 ```
 
 Notes:
@@ -307,34 +305,49 @@ Notes:
 - pnpm build:web only builds the demo site
 - pnpm test:core runs the core package tests
 
-## One-click Package Publishing
+## GitHub Actions Release and Deployment
 
-The workspace now provides a single publishing flow that releases packages in dependency order:
+This repository no longer uses local publish scripts or local gh-pages push scripts. Package publishing and demo deployment are now handled by GitHub Actions.
 
-1. @fluent-emoji-ms/core
-2. @fluent-emoji-ms/vue
-3. @fluent-emoji-ms/react
-4. @fluent-emoji-ms/svelte
+### Demo site deployment
 
-Common commands:
+- Workflow: [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
+- Trigger: pushes to `main` / `master`, plus manual workflow_dispatch
+- Deployment mode: official GitHub Pages Actions, publishing the `dist/web` artifact
 
-```bash
-pnpm publish:packages
-pnpm release:packages -- --bump patch --yes
-pnpm publish:packages -- --version 0.2.0 --tag next
-pnpm publish:packages -- --dry-run --skip-login --skip-git-check
-```
+Required repository settings:
 
-Notes:
+1. Set GitHub Pages source to GitHub Actions
+2. Keep Actions permissions enabled for Pages deployment
 
-- pnpm publish:packages runs the shared multi-package publishing script
-- pnpm release:packages runs pnpm generate-emoji-list first, then continues with publishing
-- --bump patch|minor|major updates the root version and all workspace package versions together
-- --version x.y.z sets the exact release version
-- --yes skips interactive confirmation for CI or true one-command execution
-- --tag next publishes to a custom npm tag
-- --dry-run prints the planned commands without publishing anything
-- --skip-test, --skip-build, --skip-login, and --skip-git-check are available when needed
+### npm publishing
+
+- Workflow: [.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml)
+- Trigger: manual workflow_dispatch
+- Publish order: @fluent-emoji-ms/core -> @fluent-emoji-ms/vue -> @fluent-emoji-ms/react -> @fluent-emoji-ms/svelte
+
+Required repository configuration:
+
+1. Add a GitHub Actions secret named `NPM_TOKEN`
+2. If branch protection is strict, allow the GitHub Actions bot to push version commits and tags
+
+Workflow inputs:
+
+- `version`: exact release version such as `0.2.0`
+- `bump`: when `version` is empty, compute the next version with `patch`, `minor`, `major`, or `keep`
+- `npm_tag`: npm dist-tag, default `latest`
+- `generate_emoji_list`: whether to run `pnpm generate-emoji-list` before publishing
+
+Workflow behavior:
+
+1. Optionally run `pnpm generate-emoji-list`
+2. Update the root version and all workspace package versions together
+3. Run `pnpm test:core`
+4. Run `pnpm build:packages`
+5. Publish all four npm packages in order
+6. Push the release commit and create a `vX.Y.Z` tag
+
+Note: after the publish workflow pushes its release commit, the Pages workflow will run automatically, so the demo site stays aligned with the latest released commit.
 
 ## License
 

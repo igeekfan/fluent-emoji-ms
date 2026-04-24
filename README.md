@@ -296,8 +296,6 @@ pnpm build:packages
 pnpm build:web
 pnpm test:core
 pnpm generate-emoji-list
-pnpm publish:packages
-pnpm release:packages
 ```
 
 说明：
@@ -307,34 +305,49 @@ pnpm release:packages
 - pnpm build:web：只构建预览站
 - pnpm test:core：运行 core 测试
 
-## 一键发布 packages
+## GitHub Actions 发布与部署
 
-当前 workspace 已提供统一发布入口，会按依赖顺序发布：
+本仓库已经移除本地发包和本地 gh-pages 推送脚本，统一改为 GitHub Actions。
 
-1. @fluent-emoji-ms/core
-2. @fluent-emoji-ms/vue
-3. @fluent-emoji-ms/react
-4. @fluent-emoji-ms/svelte
+### Demo 站点部署
 
-常用命令：
+- 工作流文件：[.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
+- 触发方式：推送到 `main` / `master`，或手动执行 workflow_dispatch
+- 部署方式：使用 GitHub 官方 Pages Actions，从 `dist/web` 上传产物并发布
 
-```bash
-pnpm publish:packages
-pnpm release:packages -- --bump patch --yes
-pnpm publish:packages -- --version 0.2.0 --tag next
-pnpm publish:packages -- --dry-run --skip-login --skip-git-check
-```
+仓库需要的设置：
 
-说明：
+1. 在 GitHub Pages 设置中把 Source 改为 GitHub Actions
+2. 保持仓库 Actions 权限允许 workflow 写入 Pages
 
-- pnpm publish:packages：执行统一多包发布脚本
-- pnpm release:packages：先运行 pnpm generate-emoji-list，再走发布流程
-- --bump patch|minor|major：统一提升 root 和四个 packages 的版本号
-- --version x.y.z：直接指定要发布的版本号
-- --yes：跳过交互确认，适合 CI 或真正的一键执行
-- --tag next：发布到指定 npm tag
-- --dry-run：只打印将要执行的命令，不真正发包
-- --skip-test、--skip-build、--skip-login、--skip-git-check：按需跳过对应步骤
+### npm 发包
+
+- 工作流文件：[.github/workflows/publish-packages.yml](.github/workflows/publish-packages.yml)
+- 触发方式：手动执行 workflow_dispatch
+- 发布顺序：@fluent-emoji-ms/core -> @fluent-emoji-ms/vue -> @fluent-emoji-ms/react -> @fluent-emoji-ms/svelte
+
+仓库需要的配置：
+
+1. 新增 GitHub Actions Secret：`NPM_TOKEN`
+2. 如果仓库有严格的分支保护，允许 GitHub Actions bot 推送版本提交和 tag
+
+发布工作流支持这些输入：
+
+- `version`：直接指定目标版本，例如 `0.2.0`
+- `bump`：当 `version` 为空时，按 `patch` / `minor` / `major` / `keep` 计算版本
+- `npm_tag`：发布到 npm 的 dist-tag，默认 `latest`
+- `generate_emoji_list`：是否先运行 `pnpm generate-emoji-list`
+
+工作流执行内容：
+
+1. 可选运行 `pnpm generate-emoji-list`
+2. 同步更新根包和四个 workspace package 的版本号
+3. 运行 `pnpm test:core`
+4. 运行 `pnpm build:packages`
+5. 顺序发布四个 npm 包
+6. 推送版本提交并创建 `vX.Y.Z` tag
+
+提示：发布工作流推送版本提交后，会自动触发 Pages 工作流，因此 demo 站点会跟随最新发布提交一起更新。
 
 ## License
 

@@ -25,7 +25,8 @@
 - [src/data](src/data) contains emoji metadata, category definitions, and filtering utilities.
 - [src/examples](src/examples) and [src/App.vue](src/App.vue) power the demo site.
 - [src/main.ts](src/main.ts) is only for the demo app bootstrap.
-- [scripts](scripts) contains release/deploy utilities and emoji data generation scripts.
+- [scripts](scripts) contains emoji data generation and other repository maintenance scripts.
+- [.github/workflows](.github/workflows) contains the GitHub Actions workflows for npm publishing and GitHub Pages deployment.
 
 ## Important Boundaries
 
@@ -38,7 +39,7 @@
 ## Project-Specific Pitfalls
 
 - Not everything under [src/examples](src/examples) is purely demo-only: [src/plugin/index.ts](src/plugin/index.ts) registers `CdnSelector` from `src/examples/components/CdnSelector.vue` as a global component. Changes there can affect plugin consumers.
-- The deploy and publish scripts in [scripts/deploy-gh-pages.js](scripts/deploy-gh-pages.js) and [scripts/publish-npm.js](scripts/publish-npm.js) run git and publish operations. Do not execute them unless the user explicitly asks.
+- Publishing and GitHub Pages deployment are handled by GitHub Actions workflows under [.github/workflows](.github/workflows). Do not trigger or alter release automation unless the user explicitly asks.
 - The repo currently mixes library code, demo code, and packaging scripts in one workspace. Prefer the smallest validation that matches the edited area.
 
 ## Validation Guidance

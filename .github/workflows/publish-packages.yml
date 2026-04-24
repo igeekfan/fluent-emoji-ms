@@ -1,0 +1,211 @@
+name: Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version to release, e.g. 0.2.0
+        required: false
+        type: string
+      bump:
+        description: Version bump to use when version is empty
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - keep
+      npm_tag:
+        description: npm dist-tag
+        required: true
+        default: latest
+        type: string
+      generate_emoji_list:
+        description: Run pnpm generate-emoji-list before publishing
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-packages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure release branch
+        run: |
+          if [[ "${GITHUB_REF_NAME}" != "main" && "${GITHUB_REF_NAME}" != "master" ]]; then
+            echo "This workflow must be run from main or master."
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate emoji list
+        if: ${{ inputs.generate_emoji_list }}
+        run: pnpm generate-emoji-list
+
+      - name: Resolve and update version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_BUMP: ${{ inputs.bump }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs')
+          const path = require('path')
+
+          const files = [
+            'package.json',
+            'packages/core/package.json',
+            'packages/vue/package.json',
+            'packages/react/package.json',
+            'packages/svelte/package.json'
+          ]
+
+          const inputVersion = (process.env.INPUT_VERSION || '').trim()
+          const bump = (process.env.INPUT_BUMP || 'patch').trim()
+
+          function readJson(filePath) {
+            return JSON.parse(fs.readFileSync(path.resolve(filePath), 'utf8'))
+          }
+
+          function writeJson(filePath, content) {
+            fs.writeFileSync(path.resolve(filePath), `${JSON.stringify(content, null, 2)}\n`)
+          }
+
+          function isValidSemver(version) {
+            return /^\d+\.\d+\.\d+$/.test(version)
+          }
+
+          function incrementVersion(version, releaseType) {
+            const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/)
+            if (!match) {
+              throw new Error(`Unsupported version format: ${version}`)
+            }
+
+            const major = Number(match[1])
+            const minor = Number(match[2])
+            const patch = Number(match[3])
+
+            if (releaseType === 'patch') {
+              return `${major}.${minor}.${patch + 1}`
+            }
+
+            if (releaseType === 'minor') {
+              return `${major}.${minor + 1}.0`
+            }
+
+            if (releaseType === 'major') {
+              return `${major + 1}.0.0`
+            }
+
+            if (releaseType === 'keep') {
+              return version
+            }
+
+            throw new Error(`Unsupported bump type: ${releaseType}`)
+          }
+
+          const manifests = files.map((file) => ({ file, json: readJson(file) }))
+          const versions = [...new Set(manifests.map((item) => item.json.version))]
+          if (versions.length !== 1) {
+            throw new Error(`Workspace package versions are not aligned: ${versions.join(', ')}`)
+          }
+
+          const currentVersion = versions[0]
+          const nextVersion = inputVersion || incrementVersion(currentVersion, bump)
+          if (!isValidSemver(nextVersion)) {
+            throw new Error(`Invalid release version: ${nextVersion}`)
+          }
+
+          for (const manifest of manifests) {
+            manifest.json.version = nextVersion
+            writeJson(manifest.file, manifest.json)
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${nextVersion}\n`)
+          NODE
+
+      - name: Ensure release tag does not already exist
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git rev-parse "v${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${RELEASE_VERSION} already exists."
+            exit 1
+          fi
+
+      - name: Run core tests
+        run: pnpm test:core
+
+      - name: Build packages
+        run: pnpm build:packages
+
+      - name: Prepare release commit
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "chore(release): v${RELEASE_VERSION}"
+          fi
+
+      - name: Publish core package
+        working-directory: packages/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
+
+      - name: Publish Vue package
+        working-directory: packages/vue
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
+
+      - name: Publish React package
+        working-directory: packages/react
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
+
+      - name: Publish Svelte package
+        working-directory: packages/svelte
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks --tag "${{ inputs.npm_tag }}"
+
+      - name: Push release commit and tag
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag -a "v${RELEASE_VERSION}" -m "Release v${RELEASE_VERSION}"
+          git push origin "${GITHUB_REF_NAME}" --follow-tags

@@ -1,0 +1,32 @@
+{
+  "name": "@fluent-emoji-ms/svelte",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/fluent-emoji-ms-svelte.js",
+  "module": "./dist/fluent-emoji-ms-svelte.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fluent-emoji-ms-svelte.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm exec vite build && pnpm exec tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@fluent-emoji-ms/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "typescript": "^5.1.6",
+    "vite": "^5.4.10"
+  }
+}

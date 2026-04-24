@@ -1,801 +1,402 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import FluentEmojiPicker from '../components/FluentEmojiPicker.vue'
-import CodeBlock from './components/CodeBlock.vue' // 导入 CodeBlock 组件
-import type { EmojiItemWithStyle } from '@/types/emoji.d.ts'
-import { useEmojiConfig } from '../plugin'
+import { computed, ref } from 'vue'
+import { FluentEmojiPicker, buildEmojiImageUrl, type EmojiItemWithStyle, type EmojiLocale, useEmojiConfig } from '@fluent-emoji-ms/vue'
+import CodeBlock from './components/CodeBlock.vue'
 
-// 使用全局 CDN 配置
+type ButtonStyleKey = 'default' | 'blue' | 'green' | 'red' | 'icon'
+
+const props = withDefaults(defineProps<{ locale?: EmojiLocale }>(), {
+  locale: 'zh-CN'
+})
+
 const { config } = useEmojiConfig()
-
-// 选中的表情
 const selectedEmoji = ref<EmojiItemWithStyle | null>(null)
+const currentStyle = ref<ButtonStyleKey>('default')
 
-// 处理表情选择
-const handleSelectEmoji = (emoji: EmojiItemWithStyle) => {
-  selectedEmoji.value = emoji
-  console.log('选中表情:', emoji.name)
-}
+const text = computed(() => props.locale === 'en-US'
+  ? {
+      title: 'Customize the trigger through slots',
+      copy: 'The trigger slot lets you keep the picker attached to your own button designs while preserving the same selection behavior.',
+      emptyTitle: 'No emoji selected yet',
+      emptyCopy: 'Pick an emoji from any custom trigger below to preview the selected state.',
+      selectedTitle: 'Current selection',
+      styleTitle: 'Choose a button style',
+      codeTitle: 'Slot customization example',
+      styles: {
+        default: 'Default',
+        blue: 'Blue',
+        green: 'Green',
+        red: 'Red',
+        icon: 'Icon'
+      },
+      descriptions: {
+        default: 'Use the built-in trigger button.',
+        blue: 'A primary action button with emoji preview.',
+        green: 'A confirm-style button for positive workflows.',
+        red: 'A compact attention-grabbing action button.',
+        icon: 'A pure icon trigger for dense toolbars.'
+      },
+      insert: 'Insert Emoji',
+      replace: 'Replace Emoji',
+      quickReaction: 'Quick Reaction',
+      statusAction: 'Status Action',
+      toolbar: 'Toolbar Action',
+      category: 'Category',
+      style: 'Style'
+    }
+  : {
+      title: '通过插槽自定义触发按钮',
+      copy: 'trigger 插槽可以把选择器挂到你自己的按钮设计上，同时保留同一套表情选择交互。',
+      emptyTitle: '还没有选中表情',
+      emptyCopy: '从下方任意一种按钮样式里选一个表情，看看触发器和结果区如何联动。',
+      selectedTitle: '当前选中表情',
+      styleTitle: '选择按钮样式',
+      codeTitle: '插槽自定义示例',
+      styles: {
+        default: '默认',
+        blue: '蓝色',
+        green: '绿色',
+        red: '红色',
+        icon: '图标'
+      },
+      descriptions: {
+        default: '使用组件自带的默认触发按钮。',
+        blue: '带预览的主操作按钮，适合插入内容。',
+        green: '偏确认语义的按钮，适合正向流程。',
+        red: '更醒目的强调按钮，适合高关注动作。',
+        icon: '纯图标触发器，适合密集工具栏。'
+      },
+      insert: '插入表情',
+      replace: '更换表情',
+      quickReaction: '快速反馈',
+      statusAction: '状态动作',
+      toolbar: '工具栏动作',
+      category: '分类',
+      style: '风格'
+    })
 
-// 处理清除操作
-const handleClearEmoji = () => {
-  selectedEmoji.value = null
-  console.log('已清除选择')
-}
+const styleOptions = computed(() => [
+  { key: 'default' as const, label: text.value.styles.default, description: text.value.descriptions.default },
+  { key: 'blue' as const, label: text.value.styles.blue, description: text.value.descriptions.blue },
+  { key: 'green' as const, label: text.value.styles.green, description: text.value.descriptions.green },
+  { key: 'red' as const, label: text.value.styles.red, description: text.value.descriptions.red },
+  { key: 'icon' as const, label: text.value.styles.icon, description: text.value.descriptions.icon }
+])
 
-// 自定义按钮样式演示，增加图标样式
-const buttonStyles = [
-  { name: '默认', class: '', icon: '' },
-  { name: '蓝色', class: 'blue-button', icon: 'icon-emoji' },
-  { name: '绿色', class: 'green-button', icon: 'icon-add' },
-  { name: '红色', class: 'red-button', icon: 'icon-smile' },
-  { name: '图标', class: 'icon-button', icon: 'icon-emoji-face' }
-]
-
-const currentStyle = ref(buttonStyles[0])
-
-const changeButtonStyle = (style: typeof buttonStyles[0]) => {
-  currentStyle.value = style
-}
-
-// 添加代码示例
-const blueButtonCode = `<template>
-  <!-- 自定义蓝色按钮 -->
-  <FluentEmojiPicker 
-    @select="handleSelectEmoji"
-    :baseUrl="cdnBaseUrl"
-    :closeOnSelect="true"
-  >
-    <button class="blue-button">
-      <i class="icon-emoji"></i>
-      <span class="button-text">{{ selectedEmoji ? '更换表情' : '插入表情' }}</span>
-      <span v-if="selectedEmoji" class="emoji-preview">
-        <img 
-          :src="\`\${cdnBaseUrl}/icons/\${selectedEmoji.style}/\${selectedEmoji.path}\`" 
-          :alt="selectedEmoji.name"
-          width="20"
-          height="20"
-        />
-      </span>
-    </button>
-  </FluentEmojiPicker>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-import { FluentEmojiPicker } from 'fluent-emoji-ms'
-import 'fluent-emoji-ms/style.css'
-
-const cdnBaseUrl = 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1'
-const selectedEmoji = ref(null)
-
-function handleSelectEmoji(emoji) {
-  selectedEmoji.value = emoji
-  console.log('选中表情:', emoji.name)
-}
-<\/script>
-
-<style>
-.blue-button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-}
-
-.blue-button:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
-}
-
-.emoji-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.emoji-preview img {
-  border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 2px;
-}
-
-.icon-emoji::before {
-  content: "😊";
-}
-</style>`
-
-const iconButtonCode = `<template>
-  <!-- 纯图标按钮 -->
-  <FluentEmojiPicker 
-    @select="handleSelectEmoji"
-    :baseUrl="cdnBaseUrl"
-    :closeOnSelect="true"
-  >
-    <button class="icon-button">
-      <i class="icon-emoji-face"></i>
-    </button>
-  </FluentEmojiPicker>
-</template>
-
-<style>
-.icon-button {
-  background-color: #8b5cf6;
-  color: white;
-  border: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  font-size: 20px;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
-}
-
-.icon-button:hover {
-  background-color: #7c3aed;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
-}
-
-.icon-emoji-face::before {
-  content: "😄";
-}
-</style>`
-
-// 当前展示的代码示例
-const currentCode = computed(() => {
-  if (currentStyle.value.name === '蓝色') {
-    return blueButtonCode;
-  } else if (currentStyle.value.name === '图标') {
-    return iconButtonCode;
+const exampleCode = computed(() => {
+  if (currentStyle.value === 'default') {
+    return `<FluentEmojiPicker locale="${props.locale}" :base-url="${config.cdn.baseUrl}" @select="handleSelectEmoji" />`
   }
-  return '';
-});
 
-// 当前代码标题
-const currentCodeTitle = computed(() => {
-  if (currentStyle.value.name === '蓝色') {
-    return '蓝色按钮示例';
-  } else if (currentStyle.value.name === '图标') {
-    return '图标按钮示例';
-  }
-  return '按钮自定义示例';
-});
+  const buttonMarkup = {
+    blue: `<button type="button" class="blue-button" @click="toggleOpen">
+  <span>${selectedEmoji.value ? text.value.replace : text.value.insert}</span>
+</button>`,
+    green: `<button type="button" class="green-button" @click="toggleOpen">
+  <span>${text.value.quickReaction}</span>
+</button>`,
+    red: `<button type="button" class="red-button" @click="toggleOpen">
+  <span>${text.value.statusAction}</span>
+</button>`,
+    icon: `<button type="button" class="icon-button" @click="toggleOpen" aria-label="${text.value.toolbar}">
+  <span>😊</span>
+</button>`
+  }[currentStyle.value]
+
+  return `<FluentEmojiPicker locale="${props.locale}" :base-url="${config.cdn.baseUrl}" @select="handleSelectEmoji">
+  <template #trigger="{ toggleOpen }">
+    ${buttonMarkup}
+  </template>
+</FluentEmojiPicker>`
+})
 </script>
 
 <template>
-    
-    <div class="example-layout">
-      <!-- 左侧内容区域 -->
-      <div class="content-area">
-        <!-- 预览区域放在顶部 -->
-        <div class="preview-section">
-          <div v-if="selectedEmoji" class="selected-emoji-preview">
-            <div class="emoji-display">
-              <div class="emoji-image-container">
-                <img 
-                  :src="`${config.cdn.baseUrl}/icons/${selectedEmoji.style}/${selectedEmoji.path}`" 
-                  :alt="selectedEmoji.name"
-                  width="80"
-                  height="80"
-                />
-              </div>
-              <div class="emoji-info">
-                <div class="emoji-title">当前选中表情</div>
-                <div class="emoji-name">{{ selectedEmoji.name }}</div>
-                <div class="emoji-meta">
-                  <span class="emoji-category">{{ selectedEmoji.category || '未知分类' }}</span>
-                  <span class="emoji-style">{{ selectedEmoji.style }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="empty-preview">
-            <div class="empty-icon">💫</div>
-            <div class="empty-text">从下方选择一个表情</div>
-          </div>
+  <div class="slot-layout">
+    <section class="preview-card surface-card">
+      <div class="section-head">
+        <h3>{{ text.title }}</h3>
+        <p class="section-copy">{{ text.copy }}</p>
+      </div>
+
+      <div v-if="selectedEmoji" class="selected-preview">
+        <div class="emoji-preview-image">
+          <img
+            :src="buildEmojiImageUrl(config.cdn.baseUrl, selectedEmoji.style, selectedEmoji.path)"
+            :alt="selectedEmoji.name"
+            width="80"
+            height="80"
+          />
         </div>
-        
-        <!-- 按钮样式选择卡片 -->
-        <div class="style-selector-card">
-          <h3>选择按钮样式</h3>
-          <div class="style-buttons-grid">
-            <button 
-              v-for="style in buttonStyles" 
-              :key="style.name"
-              :class="['style-selector-button', { active: currentStyle.name === style.name }]"
-              @click="changeButtonStyle(style)"
-            >
-              <span class="style-icon" :class="style.class">
-                <i :class="style.icon"></i>
-              </span>
-              <span class="style-name">{{ style.name }}</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- 示例按钮展示区 -->
-        <div class="buttons-showcase">
-          <!-- 默认按钮样式 -->
-          <div v-if="currentStyle.name === '默认'" class="showcase-item">
-            <h4>默认样式</h4>
-            <div class="showcase-description">使用组件的默认按钮外观</div>
-            <div class="showcase-demo">
-              <FluentEmojiPicker 
-                @select="handleSelectEmoji"
-                @clear="handleClearEmoji"
-                :baseUrl="config.cdn.baseUrl"
-                :closeOnSelect="true"
-              />
-            </div>
-          </div>
-          
-          <!-- 自定义蓝色按钮 -->
-          <div v-if="currentStyle.name === '蓝色'" class="showcase-item">
-            <h4>蓝色样式</h4>
-            <div class="showcase-description">现代感蓝色按钮设计</div>
-            <div class="showcase-demo">
-              <FluentEmojiPicker 
-                @select="handleSelectEmoji"
-                @clear="handleClearEmoji"
-                :baseUrl="config.cdn.baseUrl"
-                :closeOnSelect="true"
-              >
-                <button type="button" class="blue-button">
-                  <i class="icon-emoji"></i>
-                  <span class="button-text">{{ selectedEmoji ? '更换表情' : '插入表情' }}</span>
-                  <span v-if="selectedEmoji" class="emoji-preview">
-                    <img 
-                      :src="`${config.cdn.baseUrl}/icons/${selectedEmoji.style}/${selectedEmoji.path}`" 
-                      :alt="selectedEmoji.name"
-                      width="20"
-                      height="20"
-                    />
-                  </span>
-                </button>
-              </FluentEmojiPicker>
-            </div>
-          </div>
-          
-          <!-- 自定义绿色按钮 -->
-          <div v-if="currentStyle.name === '绿色'" class="showcase-item">
-            <h4>绿色样式</h4>
-            <div class="showcase-description">环保主题绿色按钮</div>
-            <div class="showcase-demo">
-              <FluentEmojiPicker 
-                @select="handleSelectEmoji"
-                @clear="handleClearEmoji"
-                :baseUrl="config.cdn.baseUrl"
-                :closeOnSelect="true"
-              >
-                <button type="button" class="green-button">
-                  <span v-if="selectedEmoji" class="emoji-preview">
-                    <img 
-                      :src="`${config.cdn.baseUrl}/icons/${selectedEmoji.style}/${selectedEmoji.path}`" 
-                      :alt="selectedEmoji.name"
-                      width="20"
-                      height="20"
-                    />
-                  </span>
-                  <span class="button-text">{{ selectedEmoji ? '更改表情' : '添加表情' }}</span>
-                  <i class="icon-add"></i>
-                </button>
-              </FluentEmojiPicker>
-            </div>
-          </div>
-          
-          <!-- 自定义红色按钮 -->
-          <div v-if="currentStyle.name === '红色'" class="showcase-item">
-            <h4>红色样式</h4>
-            <div class="showcase-description">醒目的红色按钮设计</div>
-            <div class="showcase-demo">
-              <FluentEmojiPicker 
-                @select="handleSelectEmoji"
-                @clear="handleClearEmoji"
-                :baseUrl="config.cdn.baseUrl"
-                :closeOnSelect="true"
-              >
-                <button type="button" class="red-button">
-                  <i class="icon-smile"></i>
-                  <span v-if="selectedEmoji" class="emoji-preview">
-                    <img 
-                      :src="`${config.cdn.baseUrl}/icons/${selectedEmoji.style}/${selectedEmoji.path}`" 
-                      :alt="selectedEmoji.name"
-                      width="20"
-                      height="20"
-                    />
-                  </span>
-                </button>
-              </FluentEmojiPicker>
-            </div>
-          </div>
-          
-          <!-- 自定义图标按钮 -->
-          <div v-if="currentStyle.name === '图标'" class="showcase-item">
-            <h4>图标按钮</h4>
-            <div class="showcase-description">简约的纯图标按钮</div>
-            <div class="showcase-demo">
-              <FluentEmojiPicker 
-                @select="handleSelectEmoji"
-                @clear="handleClearEmoji"
-                :baseUrl="config.cdn.baseUrl"
-                :closeOnSelect="true"
-              >
-                <button type="button" class="icon-button">
-                  <i class="icon-emoji-face"></i>
-                </button>
-              </FluentEmojiPicker>
-            </div>
-          </div>
-        </div>
-        
-        <!-- JSON 详细信息卡片 -->
-        <div v-if="selectedEmoji" class="detail-card">
-          <div class="card-header">
-            <h3>表情数据结构</h3>
-            <span class="json-badge">JSON</span>
-          </div>
-          <pre class="emoji-details-code">{{ JSON.stringify(selectedEmoji, null, 2) }}</pre>
+        <div>
+          <p class="preview-label">{{ text.selectedTitle }}</p>
+          <strong>{{ selectedEmoji.name }}</strong>
+          <p>{{ text.category }}: {{ selectedEmoji.category }}</p>
+          <p>{{ text.style }}: {{ selectedEmoji.style }}</p>
         </div>
       </div>
-      
-      <!-- 右侧代码区域 -->
-      <div class="code-area" v-if="currentCode">
-        <CodeBlock 
-          :code="currentCode" 
-          language="vue" 
-          :title="currentCodeTitle" 
-          :floating="true" 
-        />
+      <div v-else class="empty-preview">
+        <div class="empty-icon">💫</div>
+        <strong>{{ text.emptyTitle }}</strong>
+        <p>{{ text.emptyCopy }}</p>
       </div>
+    </section>
+
+    <section class="surface-card style-card">
+      <div class="section-head compact-head">
+        <h3>{{ text.styleTitle }}</h3>
+      </div>
+
+      <div class="style-selector-grid">
+        <button
+          v-for="style in styleOptions"
+          :key="style.key"
+          type="button"
+          class="style-selector"
+          :class="{ active: currentStyle === style.key }"
+          @click="currentStyle = style.key"
+        >
+          <strong>{{ style.label }}</strong>
+          <span>{{ style.description }}</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="showcase-layout">
+      <section class="surface-card showcase-card">
+        <div class="showcase-demo">
+          <FluentEmojiPicker
+            v-if="currentStyle === 'default'"
+            :locale="locale"
+            :base-url="config.cdn.baseUrl"
+            @select="selectedEmoji = $event"
+            @clear="selectedEmoji = null"
+          />
+
+          <FluentEmojiPicker
+            v-else
+            :locale="locale"
+            :base-url="config.cdn.baseUrl"
+            @select="selectedEmoji = $event"
+            @clear="selectedEmoji = null"
+          >
+            <template #trigger="{ toggleOpen }">
+              <button
+                v-if="currentStyle === 'blue'"
+                type="button"
+                class="blue-button"
+                @click="toggleOpen"
+              >
+                <span>{{ selectedEmoji ? text.replace : text.insert }}</span>
+                <span v-if="selectedEmoji" class="trigger-emoji-preview">
+                  <img
+                    :src="buildEmojiImageUrl(config.cdn.baseUrl, selectedEmoji.style, selectedEmoji.path)"
+                    :alt="selectedEmoji.name"
+                    width="20"
+                    height="20"
+                  />
+                </span>
+              </button>
+
+              <button v-else-if="currentStyle === 'green'" type="button" class="green-button" @click="toggleOpen">
+                <span>{{ text.quickReaction }}</span>
+              </button>
+
+              <button v-else-if="currentStyle === 'red'" type="button" class="red-button" @click="toggleOpen">
+                <span>{{ text.statusAction }}</span>
+              </button>
+
+              <button v-else type="button" class="icon-button" :aria-label="text.toolbar" @click="toggleOpen">
+                <span>😊</span>
+              </button>
+            </template>
+          </FluentEmojiPicker>
+        </div>
+      </section>
+
+      <aside class="code-column">
+        <CodeBlock :locale="locale" language="vue" :title="text.codeTitle" :code="exampleCode" />
+      </aside>
     </div>
+  </div>
 </template>
 
 <style scoped>
-
-.example-layout {
-  display: flex;
-  gap: 24px;
+.slot-layout {
+  display: grid;
+  gap: 20px;
 }
 
-.content-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  min-width: 0; /* 确保内容区域可以缩小 */
+.showcase-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 20px;
 }
 
-.code-area {
-  width: 35%;
-  min-width: 320px; /* 设置最小宽度 */
+.surface-card {
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
 }
 
-h2 {
-  margin: 0 0 16px;
-  color: #2d3748;
-  font-size: 1.5rem; /* 减小标题大小 */
-  font-weight: 700;
-  text-align: center; /* 居中标题 */
-  padding: 16px 0; /* 添加上下内边距 */
-}
-
-h3 {
-  margin: 0 0 16px;
-  font-size: 1.2rem; /* 减小副标题大小 */
-  color: #2d3748;
-  font-weight: 600;
-}
-
-h4 {
-  margin: 0 0 8px;
-  font-size: 1rem; /* 减小小标题大小 */
-  color: #2d3748;
-}
-
-/* 预览区域改进 */
-.preview-section {
-  width: 100%;
-}
-
-.selected-emoji-preview {
-  background: linear-gradient(135deg, #f6f9fc, #edf2f7);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-
-.emoji-display {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.emoji-image-container {
-  background-color: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-}
-
-.emoji-image-container img {
-  display: block;
-}
-
-.emoji-info {
-  flex-grow: 1;
-}
-
-.emoji-title {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #718096;
-  margin-bottom: 4px;
-}
-
-.emoji-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 8px;
-}
-
-.emoji-meta {
-  display: flex;
+.section-head {
+  display: grid;
   gap: 8px;
 }
 
-.emoji-category, .emoji-style {
-  background-color: #e2e8f0;
-  color: #4a5568;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
+.compact-head {
+  gap: 4px;
+}
+
+.section-head h3,
+.preview-label,
+.empty-preview strong {
+  margin: 0;
+}
+
+.section-copy,
+.selected-preview p,
+.empty-preview p {
+  margin: 0;
+  color: #475569;
+}
+
+.selected-preview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.emoji-preview-image {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 24px;
+  background: #f8fafc;
 }
 
 .empty-preview {
-  background: linear-gradient(135deg, #f6f9fc, #edf2f7);
-  border-radius: 16px;
-  padding: 40px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.7;
+  font-size: 28px;
 }
 
-.empty-text {
-  color: #718096;
-  font-size: 1.1rem;
-}
-
-/* 按钮样式选择器卡片 */
-.style-selector-card {
-  background-color: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-
-.style-buttons-grid {
+.style-selector-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* 减小最小宽度 */
-  gap: 12px; /* 减小间距 */
-}
-
-.style-selector-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
-  background: #f8fafc;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 16px 8px;
+}
+
+.style-selector {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
+  background: #fff;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.style-selector-button:hover {
-  background-color: #f1f5f9;
-  transform: translateY(-2px);
-}
-
-.style-selector-button.active {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-}
-
-.style-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 20px;
-  color: white;
-}
-
-.style-icon.blue-button {
-  background-color: #3b82f6;
-}
-
-.style-icon.green-button {
-  background-color: #10b981;
-}
-
-.style-icon.red-button {
-  background-color: #ef4444;
-}
-
-.style-icon.icon-button {
-  background-color: #8b5cf6;
-}
-
-.style-name {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-/* 按钮展示区域优化 */
-.buttons-showcase {
-  background-color: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.showcase-item {
-  padding: 24px;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.showcase-description {
+.style-selector span {
   color: #64748b;
-  margin-bottom: 16px;
-  font-size: 0.9rem;
-}
-
-.showcase-demo {
-  padding: 24px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  background-color: white;
-  display: flex;
-  justify-content: center;
-}
-
-/* 自定义按钮样式优化 */
-.blue-button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-}
-
-.blue-button:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
-}
-
-.green-button {
-  background-color: #10b981;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-}
-
-.green-button:hover {
-  background-color: #059669;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
-}
-
-.red-button {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
-}
-
-.red-button:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
-}
-
-.icon-button {
-  background-color: #8b5cf6;
-  color: white;
-  border: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  font-size: 20px;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
-}
-
-.icon-button:hover {
-  background-color: #7c3aed;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
-}
-
-.button-text {
-  font-weight: 500;
-}
-
-.emoji-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.emoji-preview img {
-  border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 2px;
-}
-
-/* 图标样式 */
-.icon-emoji::before {
-  content: "😊";
-}
-
-.icon-add::before {
-  content: "+";
-}
-
-.icon-smile::before {
-  content: "☺";
-}
-
-.icon-emoji-face::before {
-  content: "😄";
-}
-
-/* JSON详细信息卡片 */
-.detail-card {
-  background-color: #1e293b;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.card-header {
-  background-color: #334155;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-header h3 {
-  color: white;
-  margin: 0;
-}
-
-.json-badge {
-  background-color: #475569;
-  color: #cbd5e1;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: monospace;
-}
-
-.emoji-details-code {
-  margin: 0;
-  padding: 24px;
-  color: #f1f5f9;
-  font-family: monospace;
-  font-size: 14px;
-  overflow-x: auto;
-  background-color: #1e293b;
+  font-size: 13px;
   line-height: 1.5;
 }
 
-/* CDN 配置卡片 */
-.cdn-config-card {
-  background-color: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  margin-bottom: 24px;
+.style-selector.active {
+  border-color: #0f766e;
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.12) 0%, rgba(255, 255, 255, 0.96) 100%);
 }
 
-/* 媒体查询适配 */
-@media (max-width: 1300px) { /* 提高响应式断点 */
-  .example-layout {
-    flex-direction: column;
-  }
-  
-  .code-area {
-    width: 100%;
-    min-width: 0;
-  }
+.showcase-card {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
 }
 
-@media (max-width: 640px) {
-  .emoji-display {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .style-buttons-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.showcase-demo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.code-description {
-  color: #64748b;
-  margin-bottom: 16px;
-  font-size: 0.9rem;
+.blue-button,
+.green-button,
+.red-button,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.example-card {
-  background-color: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  margin-top: 24px;
+.blue-button:hover,
+.green-button:hover,
+.red-button:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
+}
+
+.blue-button {
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+.green-button {
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.2);
+}
+
+.red-button {
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.2);
+}
+
+.icon-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 20px;
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.22);
+}
+
+.trigger-emoji-preview {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 1080px) {
+  .showcase-layout,
+  .style-selector-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

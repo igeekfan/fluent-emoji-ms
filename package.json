@@ -1,35 +1,27 @@
 {
-  "name": "fluent-emoji-ms",
-  "version": "0.0.2",
-  "description": "A Vue 3 component for selecting Microsoft Fluent Emojis",
+  "name": "fluent-emoji-ms-workspace",
+  "version": "0.1.0",
+  "description": "Workspace for Fluent Emoji multi-platform packages and demo",
   "author": "igeekfan",
   "license": "MIT",
+  "private": true,
   "type": "module",
-  "main": "./dist/fluent-emoji-ms.umd.js",
-  "module": "./dist/fluent-emoji-ms.es.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/fluent-emoji-ms.es.js",
-      "require": "./dist/fluent-emoji-ms.umd.js"
-    },
-    "./style.css": "./dist/style.css"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:lib && npm run build:web",
-    "build:lib": "vite build --mode lib",
+    "build": "pnpm run build:packages && pnpm run build:web",
+    "build:packages": "pnpm -r --filter @fluent-emoji-ms/* build",
+    "build:lib": "pnpm --filter @fluent-emoji-ms/vue build",
     "build:web": "vite build --mode web",
+    "test:core": "pnpm --filter @fluent-emoji-ms/core test",
     "preview": "vite preview",
     "generate-emoji-list": "node scripts/generate-emoji-list.js",
-    "deploy": "npm run build:web && node scripts/deploy-gh-pages.js",
-    "publish-npm": "node scripts/publish-npm.js"
+    "deploy": "pnpm run build:web && node scripts/deploy-gh-pages.js",
+    "publish:packages": "node scripts/publish-npm.js",
+    "release:packages": "node scripts/publish-npm.js --generate",
+    "publish-npm": "pnpm run publish:packages"
   },
   "dependencies": {
+    "@fluent-emoji-ms/vue": "workspace:*",
     "vue": "^3.3.4"
   },
   "devDependencies": {
@@ -49,10 +41,5 @@
     "fluent-emoji-picker",
     "emoji-picker",
     "fluent-emoji-ms"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/igeekfan/fluent-emoji-ms"
-  },
-  "homepage": "https://igeekfan.github.io/fluent-emoji-ms/"
+  ]
 }

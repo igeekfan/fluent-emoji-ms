@@ -1,0 +1,6 @@
+export * from '@fluent-emoji-ms/core'
+export { EmojiPicker } from './EmojiPicker'
+export type { EmojiPickerProps } from './EmojiPicker'
+export { FluentEmojiPicker } from './FluentEmojiPicker'
+export type { FluentEmojiPickerProps } from './FluentEmojiPicker'
+export { default } from './FluentEmojiPicker'

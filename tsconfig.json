@@ -23,7 +23,9 @@
     /* Path alias */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@fluent-emoji-ms/core": ["packages/core/src/index.ts"],
+      "@fluent-emoji-ms/vue": ["packages/vue/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],

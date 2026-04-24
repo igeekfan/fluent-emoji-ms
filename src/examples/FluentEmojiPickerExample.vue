@@ -1,1183 +1,955 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import FluentEmojiPicker from '../components/FluentEmojiPicker.vue'
-import { defaultCategories } from '../data/emoji-utils'
-import { emojiCategories } from '../data/emoji-categories'
-import { emojiStyles } from '../data/emoji-styles'
-import CdnSelector from './components/CdnSelector.vue'
-import { useEmojiConfig } from '../plugin'
-import CodeBlock from './components/CodeBlock.vue' // 导入 CodeBlock 组件
+import { computed, reactive, ref, watch } from 'vue'
+import {
+  FluentEmojiPicker,
+  buildEmojiImageUrl,
+  defaultCategories,
+  filterCategories,
+  getEmojiPresets,
+  getEmojiStyles,
+  type EmojiItemWithStyle,
+  type EmojiLocale,
+  type EmojiPresetKey,
+  useEmojiConfig
+} from '@fluent-emoji-ms/vue'
+import CodeBlock from './components/CodeBlock.vue'
 
-// 获取全局配置
+type ConfigTab = 'basic' | 'layout' | 'content' | 'advanced'
+type ScopeMode = 'default' | 'preset' | 'categories' | 'emojiNames'
+
+const tabs: ConfigTab[] = ['basic', 'layout', 'content', 'advanced']
+const scopeModes: ScopeMode[] = ['default', 'preset', 'categories', 'emojiNames']
+
+const props = withDefaults(defineProps<{ locale?: EmojiLocale }>(), {
+  locale: 'zh-CN'
+})
+
 const { config } = useEmojiConfig()
+const locale = computed(() => props.locale)
+const activeTab = ref<ConfigTab>('basic')
+const scopeMode = ref<ScopeMode>('default')
+const selectedPreset = ref<EmojiPresetKey>('basic')
+const emojiNamesInput = ref('Thumbs Up Default\nRed Heart\nSparkles')
+const useCustomBaseUrl = ref(false)
+const customBaseUrl = ref(config.cdn.baseUrl)
+const selectedEmoji = ref<EmojiItemWithStyle | null>(null)
+const selectedEmojis = ref<EmojiItemWithStyle[]>([])
 
-// 选中的表情
-const selectedEmoji = ref<{ name: string, path: string, category?: string, style?: string } | null>(null)
+const text = computed(() => props.locale === 'en-US'
+  ? {
+      configTitle: 'Component Configuration',
+      reset: 'Reset Defaults',
+      tabs: {
+        basic: 'Basic',
+        layout: 'Layout',
+        content: 'Collection',
+        advanced: 'Advanced'
+      },
+      scopeModes: {
+        default: 'Default Categories',
+        preset: 'Preset',
+        categories: 'Custom Categories',
+        emojiNames: 'Explicit Emoji Names'
+      },
+      labels: {
+        style: 'Emoji Style',
+        buttonText: 'Button Label',
+        disabled: 'Disable Picker',
+        closeOnSelect: 'Close After Select',
+        showSelectedEmoji: 'Show Selected Summary',
+        width: 'Panel Width',
+        columns: 'Columns',
+        autoFill: 'Auto Fill Grid',
+        emojiSize: 'Emoji Size',
+        scopeMode: 'Collection Source',
+        preset: 'Preset',
+        categories: 'Visible Categories',
+        defaultCategory: 'Default Category',
+        selectAll: 'Select All',
+        restoreDefault: 'Restore Recommended',
+        selectedCategories: 'Selected Categories',
+        emojiNames: 'Emoji Names',
+        emojiNamesPlaceholder: 'One emoji name per line, for example:\nThumbs Up Default\nRed Heart\nSparkles',
+        emojiNamesHelp: 'When emojiNames are active, one emoji name per line is supported.',
+        emojiCount: 'Active emoji names',
+        showSearch: 'Show Search',
+        renderBatchSize: 'Render Batch',
+        useCustomBaseUrl: 'Override baseUrl',
+        baseUrl: 'Emoji CDN',
+        localeHint: 'Locale is inherited from the page-level language switch.',
+        currentScope: 'Current Scope',
+        currentConfig: 'Config JSON',
+        previewTitle: 'Live Preview',
+        previewCopy: 'The preview below uses an emoji-pack trigger, and width only controls the popup panel.',
+        selectedList: 'Selected Emoji',
+        clearSelections: 'Clear Selections',
+        docs: 'Configuration Notes',
+        emptySelection: 'No emoji selected yet.',
+        all: 'All'
+      },
+      docs: {
+        basic: [
+          'Basic tab exposes initialStyle, buttonText, disabled, closeOnSelect, and showSelectedEmoji.',
+          'This demo uses buttonText as the label for the custom emoji-pack trigger.'
+        ],
+        layout: [
+          'width, columns, autoFill, and emojiSize directly affect popup density.',
+          'width now controls the popup panel instead of stretching the trigger button.'
+        ],
+        content: [
+          'Switch between default categories, preset, custom categories, and explicit emojiNames.',
+          'Use one mode at a time so the prop precedence stays obvious in the preview and code sample.'
+        ],
+        advanced: [
+          'renderBatchSize and baseUrl are exposed here alongside the page-level locale note.',
+          'Use the selected emoji list below to verify the final interaction and asset source.'
+        ]
+      },
+      defaults: {
+        buttonText: 'Emoji Pack'
+      },
+      codeTitle: 'Complete high-level configuration example'
+    }
+  : {
+      configTitle: '组件配置',
+      reset: '恢复默认',
+      tabs: {
+        basic: '基础配置',
+        layout: '布局配置',
+        content: '集合配置',
+        advanced: '高级配置'
+      },
+      scopeModes: {
+        default: '默认分类',
+        preset: '预设集合',
+        categories: '自定义分类',
+        emojiNames: '显式 emojiNames'
+      },
+      labels: {
+        style: '表情风格',
+        buttonText: '按钮文本',
+        disabled: '禁用选择器',
+        closeOnSelect: '选择后关闭面板',
+        showSelectedEmoji: '显示选中摘要',
+        width: '面板宽度',
+        columns: '网格列数',
+        autoFill: '自动填充网格',
+        emojiSize: '表情尺寸',
+        scopeMode: '集合来源',
+        preset: '预设',
+        categories: '显示分类',
+        defaultCategory: '默认分类',
+        selectAll: '全选',
+        restoreDefault: '恢复推荐集合',
+        selectedCategories: '已选分类',
+        emojiNames: 'Emoji 名称',
+        emojiNamesPlaceholder: '每行一个 emoji 名称，例如：\nThumbs Up Default\nRed Heart\nSparkles',
+        emojiNamesHelp: '切到 emojiNames 模式后，这里支持逐行输入明确的表情名称。',
+        emojiCount: '当前生效的 emojiNames',
+        showSearch: '显示搜索框',
+        renderBatchSize: '批量渲染数量',
+        useCustomBaseUrl: '覆盖 baseUrl',
+        baseUrl: '表情 CDN',
+        localeHint: 'locale 继续由页面顶部的语言切换控制。',
+        currentScope: '当前集合',
+        currentConfig: '配置 JSON',
+        previewTitle: '实时预览',
+        previewCopy: '下方预览使用“表情包”触发按钮，并且宽度只控制弹层面板，不再拉伸按钮。',
+        selectedList: '已选择的表情',
+        clearSelections: '清空记录',
+        docs: '参数说明',
+        emptySelection: '还没有选中任何表情。',
+        all: '全部'
+      },
+      docs: {
+        basic: [
+          '基础配置页暴露了 initialStyle、buttonText、disabled、closeOnSelect 和 showSelectedEmoji。',
+          '这个示例会把 buttonText 直接用于自定义“表情包”触发按钮的文本。'
+        ],
+        layout: [
+          'width、columns、autoFill 和 emojiSize 会直接影响弹层密度。',
+          'width 现在只控制弹层面板，不再把触发按钮一起拉宽。'
+        ],
+        content: [
+          '可以在默认分类、preset、自定义 categories 和 emojiNames 四种模式间切换。',
+          '示例一次只启用一种集合来源，便于观察参数优先级和最终效果。'
+        ],
+        advanced: [
+          'renderBatchSize 和 baseUrl 会在这里一起暴露，方便和页面级 locale 一起验证。',
+          '下方的已选列表能帮助你确认最终交互和资源地址是否正确。'
+        ]
+      },
+      defaults: {
+        buttonText: '表情包'
+      },
+      codeTitle: '高阶组件完整配置示例'
+    })
 
-// 配置项示例 - 扩展所有可配置参数，使用全局 CDN 配置
-const configOptions = reactive({
-  // 基础配置
-  initialStyle: 'modern',
-  buttonText: '选择表情',
-  disabled: false,
-  closeOnSelect: true, // 新增配置项：选择后是否关闭
-  showSelectedEmoji: false,  // 新增配置项：是否显示选中表情区域
-  
-  // 布局配置
-  width: 320,
-  columns: 6,
-  
-  // 内容配置
-  defaultCategory: 'smileys',
-  categories: [...defaultCategories], // 复制数组，避免直接修改默认值
-  
-  // 高级配置 - 使用全局 CDN 配置的值
-  get baseUrl() { return config.cdn.baseUrl }
-})
+const localizedStyles = computed(() => getEmojiStyles(props.locale))
+const presetMap = computed(() => getEmojiPresets(props.locale))
+const presetOptions = computed(() => Object.values(presetMap.value))
+const currentPreset = computed(() => presetMap.value[selectedPreset.value])
+const availableCategories = computed(() => filterCategories(['all'], props.locale).filter((category) => category.value !== 'all'))
+const normalizedEmojiNames = computed(() => Array.from(new Set(
+  emojiNamesInput.value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+)))
 
-// 初始化时同步全局配置
-onMounted(() => {
-  // 这里可以添加额外的初始化逻辑
-})
-
-// 当前激活的配置标签页
-const activeTab = ref('basic')
-
-// 可用的分类列表，用于多选框
-const availableCategories = emojiCategories.filter(category => category.value !== 'all')
-
-// 示例数据 - 存储多个选中的表情
-const selectedEmojis = ref<Array<{ name: string, path: string, category?: string, style: string }>>([])
-
-// 处理表情选择
-const handleSelectEmoji = (emoji: { name: string, path: string, category?: string, style?: string }) => {
-  selectedEmoji.value = emoji
-  
-  // 添加到选中列表
-  selectedEmojis.value.push({
-    ...emoji,
-    style: emoji.style || configOptions.initialStyle
-  })
-  
-  console.log('选中表情:', emoji)
+function createDefaultConfig() {
+  return {
+    initialStyle: 'modern',
+    buttonText: text.value.defaults.buttonText,
+    disabled: false,
+    closeOnSelect: true,
+    showSelectedEmoji: false,
+    width: 280,
+    columns: 6,
+    autoFill: true,
+    emojiSize: 28,
+    defaultCategory: 'all',
+    categories: [...defaultCategories],
+    showSearch: true,
+    renderBatchSize: 120
+  }
 }
 
-// 处理清除操作
-const handleClearEmoji = () => {
+const configOptions = reactive(createDefaultConfig())
+
+const resolvedBaseUrl = computed(() => {
+  if (!useCustomBaseUrl.value) {
+    return config.cdn.baseUrl
+  }
+
+  return customBaseUrl.value.trim() || config.cdn.baseUrl
+})
+
+const resolvedPreset = computed(() => scopeMode.value === 'preset' ? selectedPreset.value : undefined)
+const resolvedEmojiNames = computed(() => scopeMode.value === 'emojiNames' && normalizedEmojiNames.value.length
+  ? normalizedEmojiNames.value
+  : undefined)
+const resolvedCategories = computed(() => scopeMode.value === 'categories' ? configOptions.categories : undefined)
+
+const scopedCategoryOptions = computed(() => filterCategories({
+  categories: resolvedCategories.value,
+  preset: resolvedPreset.value,
+  emojiNames: resolvedEmojiNames.value
+}, props.locale))
+
+const selectedCategoryLabels = computed(() => {
+  return availableCategories.value
+    .filter((category) => configOptions.categories.includes(category.value))
+    .map((category) => category.name)
+})
+
+const scopeSummary = computed(() => {
+  if (scopeMode.value === 'preset') {
+    return currentPreset.value.label
+  }
+
+  if (scopeMode.value === 'categories') {
+    return selectedCategoryLabels.value.join(', ')
+  }
+
+  if (scopeMode.value === 'emojiNames') {
+    return `${text.value.labels.emojiCount}: ${normalizedEmojiNames.value.length}`
+  }
+
+  return availableCategories.value
+    .filter((category) => defaultCategories.includes(category.value))
+    .map((category) => category.name)
+    .join(', ')
+})
+
+watch(
+  [useCustomBaseUrl, () => config.cdn.baseUrl],
+  ([enabled, baseUrl]) => {
+    if (!enabled) {
+      customBaseUrl.value = baseUrl
+    }
+  },
+  { immediate: true }
+)
+
+watch(() => props.locale, (_, previousLocale) => {
+  const previousDefault = previousLocale === 'en-US' ? 'Emoji Pack' : '表情包'
+  if (configOptions.buttonText === previousDefault) {
+    configOptions.buttonText = text.value.defaults.buttonText
+  }
+})
+
+watch(scopedCategoryOptions, (options) => {
+  if (!options.some((option) => option.value === configOptions.defaultCategory)) {
+    configOptions.defaultCategory = 'all'
+  }
+}, { immediate: true })
+
+const configJson = computed(() => JSON.stringify({
+  locale: props.locale,
+  baseUrl: resolvedBaseUrl.value,
+  initialStyle: configOptions.initialStyle,
+  buttonText: configOptions.buttonText,
+  disabled: configOptions.disabled,
+  closeOnSelect: configOptions.closeOnSelect,
+  showSelectedEmoji: configOptions.showSelectedEmoji,
+  width: configOptions.width,
+  columns: configOptions.columns,
+  autoFill: configOptions.autoFill,
+  emojiSize: configOptions.emojiSize,
+  defaultCategory: configOptions.defaultCategory,
+  ...(resolvedCategories.value ? { categories: resolvedCategories.value } : {}),
+  ...(resolvedPreset.value ? { preset: resolvedPreset.value } : {}),
+  ...(resolvedEmojiNames.value ? { emojiNames: resolvedEmojiNames.value } : {}),
+  showSearch: configOptions.showSearch,
+  renderBatchSize: configOptions.renderBatchSize
+}, null, 2))
+
+const exampleCode = computed(() => {
+  const lines = [
+    '<FluentEmojiPicker',
+    `  locale="${props.locale}"`,
+    `  :base-url="${JSON.stringify(resolvedBaseUrl.value)}"`,
+    `  initial-style="${configOptions.initialStyle}"`,
+    `  button-text="${configOptions.buttonText}"`,
+    `  :disabled="${configOptions.disabled}"`,
+    `  :close-on-select="${configOptions.closeOnSelect}"`,
+    `  :show-selected-emoji="${configOptions.showSelectedEmoji}"`,
+    `  :width="${configOptions.width}"`,
+    `  :columns="${configOptions.columns}"`,
+    `  :auto-fill="${configOptions.autoFill}"`,
+    `  :emoji-size="${configOptions.emojiSize}"`,
+    `  default-category="${configOptions.defaultCategory}"`
+  ]
+
+  if (resolvedPreset.value) {
+    lines.push(`  preset="${resolvedPreset.value}"`)
+  }
+
+  if (resolvedCategories.value) {
+    lines.push(`  :categories="${JSON.stringify(resolvedCategories.value)}"`)
+  }
+
+  if (resolvedEmojiNames.value) {
+    lines.push(`  :emoji-names="${JSON.stringify(resolvedEmojiNames.value)}"`)
+  }
+
+  lines.push(`  :show-search="${configOptions.showSearch}"`)
+  lines.push(`  :render-batch-size="${configOptions.renderBatchSize}"`)
+  lines.push('  @select="handleSelectEmoji"')
+  lines.push('>')
+  lines.push('  <template #trigger="{ toggleOpen, disabled }">')
+  lines.push('    <button type="button" class="emoji-pack-trigger" :disabled="disabled" @click="toggleOpen">')
+  lines.push('      <span class="emoji-pack-trigger__icon">😀</span>')
+  lines.push(`      <span>${configOptions.buttonText}</span>`)
+  lines.push('    </button>')
+  lines.push('  </template>')
+  lines.push('</FluentEmojiPicker>')
+
+  return lines.join('\n')
+})
+
+function resetConfig() {
+  Object.assign(configOptions, createDefaultConfig())
+  scopeMode.value = 'default'
+  selectedPreset.value = 'basic'
+  emojiNamesInput.value = 'Thumbs Up Default\nRed Heart\nSparkles'
+  useCustomBaseUrl.value = false
   selectedEmoji.value = null
-  console.log('已清除选择')
+  selectedEmojis.value = []
 }
 
-// 移除列表中的特定表情
-const removeEmoji = (index: number) => {
+function toggleCategory(categoryValue: string) {
+  if (configOptions.categories.includes(categoryValue)) {
+    if (configOptions.categories.length === 1) {
+      return
+    }
+    configOptions.categories = configOptions.categories.filter((value) => value !== categoryValue)
+  } else {
+    configOptions.categories = [...configOptions.categories, categoryValue]
+  }
+}
+
+function selectAllCategories() {
+  configOptions.categories = availableCategories.value.map((category) => category.value)
+}
+
+function restoreDefaultCategories() {
+  configOptions.categories = [...defaultCategories]
+  configOptions.defaultCategory = 'all'
+}
+
+function getCategoryName(categoryValue: string) {
+  return availableCategories.value.find((category) => category.value === categoryValue)?.name ?? categoryValue
+}
+
+function handleSelectEmoji(emoji: EmojiItemWithStyle) {
+  selectedEmoji.value = emoji
+  selectedEmojis.value = [emoji, ...selectedEmojis.value.filter((item) => item.name !== emoji.name || item.style !== emoji.style)].slice(0, 12)
+}
+
+function handleClearEmoji() {
+  selectedEmoji.value = null
+}
+
+function clearAllEmojis() {
+  selectedEmoji.value = null
+  selectedEmojis.value = []
+}
+
+function removeEmoji(index: number) {
   selectedEmojis.value.splice(index, 1)
 }
-
-// 重置所有配置到默认值
-const resetConfig = () => {
-  configOptions.initialStyle = 'modern'
-  configOptions.buttonText = '选择表情'
-  configOptions.disabled = false
-  configOptions.closeOnSelect = true // 重置新增的配置项
-  configOptions.showSelectedEmoji = false  // 重置新增配置项
-  configOptions.width = 320
-  configOptions.columns = 6
-  configOptions.defaultCategory = 'smileys'
-  configOptions.categories = [...defaultCategories]
-}
-
-// 清空选中的表情列表
-const clearAllEmojis = () => {
-  selectedEmojis.value = []
-  selectedEmoji.value = null
-}
-
-// 获取风格的中文名称
-const getStyleDisplayName = (styleValue: string) => {
-  const style = emojiStyles.find(s => s.value === styleValue)
-  return style ? style.name : styleValue
-}
-
-// 处理分类的切换
-const toggleCategory = (category: string) => {
-  const index = configOptions.categories.indexOf(category)
-  if (index === -1) {
-    configOptions.categories.push(category)
-  } else {
-    configOptions.categories.splice(index, 1)
-  }
-}
-
-// 分类是否被选中
-const isCategorySelected = (category: string) => {
-  return configOptions.categories.includes(category)
-}
-
-// 选择标签页
-const selectTab = (tab: string) => {
-  activeTab.value = tab
-}
-
-// 获取分类名称
-const getCategoryName = (categoryValue: string) => {
-  const category = emojiCategories.find(c => c.value === categoryValue)
-  return category ? category.name : categoryValue
-}
-
-// 是否所有分类都被选中
-const isAllCategoriesSelected = computed(() => {
-  // 过滤掉 "all" 分类，检查所有其他分类是否都被选中
-  return availableCategories.every(cat => configOptions.categories.includes(cat.value))
-})
-
-// 全选/取消全选分类
-const toggleAllCategories = (select: boolean) => {
-  if (select) {
-    // 选择所有分类
-    configOptions.categories = availableCategories.map(cat => cat.value)
-  } else {
-    // 至少保留一个分类
-    configOptions.categories = ['smileys']
-  }
-}
-
-// 完整配置示例代码
-const fullConfigExampleCode = `<template>
-  <FluentEmojiPicker 
-    :disabled="false"
-    initialStyle="modern"
-    defaultCategory="face-emotion"
-    buttonText="选择表情"
-    :baseUrl="cdnBaseUrl"
-    :width="320"
-    :columns="6"
-    :categories="['face-emotion', 'people-body', 'animals-nature']"
-    :closeOnSelect="true"
-    :showSelectedEmoji="true"
-    :autoFill="true"
-    :emojiSize="28"
-    @select="handleSelectEmoji"
-    @clear="handleClear"
-  />
-</template>
-
-<script setup>
-import { ref } from 'vue'
-import { FluentEmojiPicker } from 'fluent-emoji-ms'
-import 'fluent-emoji-ms/style.css'
-
-const cdnBaseUrl = 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1'
-const selectedEmoji = ref(null)
-
-function handleSelectEmoji(emoji) {
-  selectedEmoji.value = emoji
-  console.log('选中表情:', emoji)
-}
-
-function handleClear() {
-  selectedEmoji.value = null
-  console.log('表情已清除')
-}
-<\/script>`
 </script>
 
 <template>
-    <div class="example-layout">
-      <!-- 示例和配置区域 -->
-      <div class="content-area">
-        <div class="layout-container">
-          <!-- 左侧：配置区域 -->
-          <div class="config-area">
-            <div class="config-panel">
-              <div class="panel-header">
-                <h3>组件配置</h3>
-                <div class="panel-actions">
-                  <button @click="resetConfig" class="action-button reset">恢复默认</button>
-                </div>
-              </div>
-              
-              <div class="tabs">
-                <div class="tab-headers">
-                  <button 
-                    v-for="tab in ['basic', 'layout', 'content', 'advanced']"
-                    :key="tab"
-                    class="tab-header" 
-                    :class="{ active: activeTab === tab }"
-                    @click="selectTab(tab)"
+  <div class="advanced-layout">
+    <div class="content-area">
+      <div class="layout-container">
+        <div class="config-area">
+          <section class="config-panel surface-card">
+            <div class="panel-header">
+              <h3>{{ text.configTitle }}</h3>
+              <button type="button" class="action-button" @click="resetConfig">{{ text.reset }}</button>
+            </div>
+
+            <div class="tabs">
+              <button
+                v-for="tab in tabs"
+                :key="tab"
+                type="button"
+                class="tab-header"
+                :class="{ active: activeTab === tab }"
+                @click="activeTab = tab"
+              >
+                {{ text.tabs[tab] }}
+              </button>
+            </div>
+
+            <div v-if="activeTab === 'basic'" class="tab-content">
+              <label>
+                <span>{{ text.labels.style }}</span>
+                <select v-model="configOptions.initialStyle" class="text-input">
+                  <option v-for="style in localizedStyles" :key="style.value" :value="style.value">{{ style.name }}</option>
+                </select>
+              </label>
+
+              <label>
+                <span>{{ text.labels.buttonText }}</span>
+                <input v-model="configOptions.buttonText" type="text" class="text-input" />
+              </label>
+
+              <label class="checkbox-row"><input v-model="configOptions.disabled" type="checkbox" /> <span>{{ text.labels.disabled }}</span></label>
+              <label class="checkbox-row"><input v-model="configOptions.closeOnSelect" type="checkbox" /> <span>{{ text.labels.closeOnSelect }}</span></label>
+              <label class="checkbox-row"><input v-model="configOptions.showSelectedEmoji" type="checkbox" /> <span>{{ text.labels.showSelectedEmoji }}</span></label>
+            </div>
+
+            <div v-else-if="activeTab === 'layout'" class="tab-content">
+              <label>
+                <span>{{ text.labels.width }}</span>
+                <input v-model.number="configOptions.width" type="range" min="240" max="520" step="20" />
+                <strong>{{ configOptions.width }}px</strong>
+              </label>
+
+              <label>
+                <span>{{ text.labels.columns }}</span>
+                <input v-model.number="configOptions.columns" type="range" min="4" max="10" step="1" />
+                <strong>{{ configOptions.columns }}</strong>
+              </label>
+
+              <label class="checkbox-row"><input v-model="configOptions.autoFill" type="checkbox" /> <span>{{ text.labels.autoFill }}</span></label>
+
+              <label>
+                <span>{{ text.labels.emojiSize }}</span>
+                <input v-model.number="configOptions.emojiSize" type="range" min="20" max="36" step="2" />
+                <strong>{{ configOptions.emojiSize }}px</strong>
+              </label>
+            </div>
+
+            <div v-else-if="activeTab === 'content'" class="tab-content">
+              <div class="scope-block">
+                <span>{{ text.labels.scopeMode }}</span>
+                <div class="scope-mode-row">
+                  <button
+                    v-for="mode in scopeModes"
+                    :key="mode"
+                    type="button"
+                    class="mode-button"
+                    :class="{ active: scopeMode === mode }"
+                    @click="scopeMode = mode"
                   >
-                    {{ {'basic': '基础配置', 'layout': '布局配置', 'content': '内容配置', 'advanced': '高级配置'}[tab] }}
+                    {{ text.scopeModes[mode] }}
                   </button>
                 </div>
-                
-                <div class="tab-content" v-if="activeTab === 'basic'">
-                  <div class="config-section">
-                    <div class="config-group">
-                      <div class="config-option">
-                        <label>表情风格:</label>
-                        <div class="radio-group">
-                          <label v-for="style in emojiStyles" :key="style.value" class="radio-label">
-                            <input type="radio" v-model="configOptions.initialStyle" :value="style.value"> 
-                            <span class="radio-text">{{ style.name }}</span>
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div class="config-option">
-                        <label>按钮文本:</label>
-                        <input type="text" v-model="configOptions.buttonText" placeholder="选择表情" class="text-input">
-                      </div>
-                      
-                      <div class="config-option checkbox-option">
-                        <label class="checkbox-label">
-                          <input type="checkbox" v-model="configOptions.disabled"> 
-                          <span>禁用选择器</span>
-                        </label>
-                      </div>
-                      
-                      <div class="config-option checkbox-option">
-                        <label class="checkbox-label">
-                          <input type="checkbox" v-model="configOptions.closeOnSelect"> 
-                          <span>选择后关闭面板</span>
-                        </label>
-                      </div>
-                      
-                      <div class="config-option checkbox-option">
-                        <label class="checkbox-label">
-                          <input type="checkbox" v-model="configOptions.showSelectedEmoji"> 
-                          <span>显示选中表情区域</span>
-                        </label>
-                      </div>
-                    </div>
+              </div>
+
+              <label v-if="scopeMode === 'preset'">
+                <span>{{ text.labels.preset }}</span>
+                <select v-model="selectedPreset" class="text-input">
+                  <option v-for="preset in presetOptions" :key="preset.key" :value="preset.key">{{ preset.label }}</option>
+                </select>
+              </label>
+
+              <div v-if="scopeMode === 'preset'" class="hint-box">
+                <strong>{{ currentPreset.label }}</strong>
+                <p>{{ currentPreset.description }}</p>
+              </div>
+
+              <div v-else-if="scopeMode === 'categories'" class="category-mode-block">
+                <div class="categories-header">
+                  <span>{{ text.labels.categories }}</span>
+                  <div class="categories-actions">
+                    <button type="button" class="small-button" @click="selectAllCategories">{{ text.labels.selectAll }}</button>
+                    <button type="button" class="small-button" @click="restoreDefaultCategories">{{ text.labels.restoreDefault }}</button>
                   </div>
                 </div>
-                
-                <div class="tab-content" v-if="activeTab === 'layout'">
-                  <div class="config-section">
-                    <div class="config-group">
-                      <div class="config-option">
-                        <label>选择器宽度:</label>
-                        <div class="input-with-unit">
-                          <input type="number" v-model.number="configOptions.width" min="200" max="800" class="number-input">
-                          <span class="unit">px</span>
-                        </div>
-                      </div>
-                      
-                      <div class="config-option">
-                        <label>表情列数: <span class="value-badge">{{ configOptions.columns }}</span></label>
-                        <input type="range" v-model.number="configOptions.columns" min="4" max="10" step="1" class="range-input">
-                        <div class="range-markers">
-                          <span>4</span>
-                          <span>7</span>
-                          <span>10</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
+                <div class="categories-grid">
+                  <label v-for="category in availableCategories" :key="category.value" class="category-checkbox">
+                    <input
+                      type="checkbox"
+                      :checked="configOptions.categories.includes(category.value)"
+                      @change="toggleCategory(category.value)"
+                    />
+                    <span>{{ category.name }}</span>
+                  </label>
                 </div>
-                
-                <div class="tab-content" v-if="activeTab === 'content'">
-                  <div class="config-section">
-                    <div class="config-group vertical">
-                      <div class="config-option">
-                        <label>默认表情类别:</label>
-                        <select v-model="configOptions.defaultCategory" class="select-input">
-                          <option value="all">全部</option>
-                          <option v-for="category in availableCategories" :key="category.value" :value="category.value">
-                            {{ category.name }}
-                          </option>
-                        </select>
-                      </div>
-                      
-                      <div class="config-option">
-                        <div class="categories-header">
-                          <label>要显示的表情分类:</label>
-                          <button 
-                            @click="toggleAllCategories(!isAllCategoriesSelected)" 
-                            class="small-button"
-                          >
-                            {{ isAllCategoriesSelected ? '取消全选' : '全选' }}
-                          </button>
-                        </div>
-                        <div class="categories-grid">
-                          <label v-for="category in availableCategories" :key="category.value" class="category-checkbox">
-                            <input 
-                              type="checkbox" 
-                              :checked="isCategorySelected(category.value)" 
-                              @change="toggleCategory(category.value)"
-                            >
-                            <span>{{ category.name }}</span>
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div class="selected-categories">
-                        <label class="subtle-label">已选分类:</label>
-                        <div class="selected-categories-tags">
-                          <div class="selected-category-tag" v-for="categoryValue in configOptions.categories" :key="categoryValue">
-                            {{ getCategoryName(categoryValue) }}
-                            <button @click="toggleCategory(categoryValue)" class="remove-tag">×</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="tab-content" v-if="activeTab === 'advanced'">
-                  <div class="config-section">
-                    <h4>高级选项</h4>
-                    <div class="config-group">
-                      <div class="config-option full-width">
-                        <label>表情图标 CDN:</label>
-                        <div class="cdn-info">
-                          <div class="cdn-value">{{ configOptions.baseUrl }}</div>
-                          <div class="cdn-note">使用全局 CDN 配置，可在页面顶部设置按钮中修改</div>
-                        </div>
-                      </div>
-                    </div>
+
+                <div class="selected-tags">
+                  <strong>{{ text.labels.selectedCategories }}</strong>
+                  <div class="tag-list">
+                    <span v-for="categoryLabel in selectedCategoryLabels" :key="categoryLabel" class="tag-chip">{{ categoryLabel }}</span>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <!-- 当前配置信息 -->
-            <div class="current-config">
-              <div class="section-header">
-                <h3>配置代码</h3>
-                <div class="code-label">JSON</div>
+
+              <label v-else-if="scopeMode === 'emojiNames'">
+                <span>{{ text.labels.emojiNames }}</span>
+                <textarea v-model="emojiNamesInput" class="text-input textarea-input" :placeholder="text.labels.emojiNamesPlaceholder" />
+              </label>
+
+              <div v-if="scopeMode === 'emojiNames'" class="hint-box compact">
+                <strong>{{ text.labels.emojiCount }}</strong>
+                <p>{{ normalizedEmojiNames.length }}</p>
+                <span>{{ text.labels.emojiNamesHelp }}</span>
               </div>
-              <pre class="config-code">{{ JSON.stringify(configOptions, null, 2) }}</pre>
+
+              <label>
+                <span>{{ text.labels.defaultCategory }}</span>
+                <select v-model="configOptions.defaultCategory" class="text-input">
+                  <option v-for="category in scopedCategoryOptions" :key="category.value" :value="category.value">{{ category.name }}</option>
+                </select>
+              </label>
+
+              <div class="hint-box compact">
+                <strong>{{ text.labels.currentScope }}</strong>
+                <p>{{ scopeSummary }}</p>
+              </div>
+
+              <label class="checkbox-row"><input v-model="configOptions.showSearch" type="checkbox" /> <span>{{ text.labels.showSearch }}</span></label>
             </div>
-          </div>
-          
-          <!-- 右侧：预览区域 -->
-          <div class="preview-area">
-            <!-- 使用FluentEmojiPicker组件，传递所有配置 -->
-            <div class="preview-section">
-              <h3 class="preview-title">预览效果</h3>
-              <div class="picker-container">
-                <FluentEmojiPicker 
-                  @select="handleSelectEmoji" 
-                  @clear="handleClearEmoji" 
-                  :initialStyle="configOptions.initialStyle"
-                  :buttonText="configOptions.buttonText"
-                  :disabled="configOptions.disabled"
-                  :width="configOptions.width"
-                  :columns="configOptions.columns"
-                  :defaultCategory="configOptions.defaultCategory"
-                  :categories="configOptions.categories"
-                  :baseUrl="configOptions.baseUrl"
-                  :closeOnSelect="configOptions.closeOnSelect"
-                  :showSelectedEmoji="configOptions.showSelectedEmoji"
-                >
-                  <!-- 自定义按钮示例 -->
-                  <template v-if="false">
-                    <button class="custom-emoji-button">
-                      <span>{{ configOptions.buttonText }}</span>
-                      <span v-if="selectedEmoji" class="emoji-preview">
-                        <img 
-                          :src="`${configOptions.baseUrl}/icons/${selectedEmoji!.style}/${selectedEmoji!.path}`" 
-                          :alt="selectedEmoji!.name"
-                          width="20"
-                          height="20"
-                        />
-                      </span>
-                    </button>
-                  </template>
-                </FluentEmojiPicker>
+
+            <div v-else class="tab-content">
+              <label>
+                <span>{{ text.labels.renderBatchSize }}</span>
+                <input v-model.number="configOptions.renderBatchSize" type="range" min="60" max="240" step="30" />
+                <strong>{{ configOptions.renderBatchSize }}</strong>
+              </label>
+
+              <label class="checkbox-row"><input v-model="useCustomBaseUrl" type="checkbox" /> <span>{{ text.labels.useCustomBaseUrl }}</span></label>
+
+              <label>
+                <span>{{ text.labels.baseUrl }}</span>
+                <input v-model="customBaseUrl" type="text" class="text-input" :disabled="!useCustomBaseUrl" />
+              </label>
+
+              <div class="hint-box compact">
+                <strong>{{ text.labels.baseUrl }}</strong>
+                <p>{{ resolvedBaseUrl }}</p>
+                <span>{{ text.labels.localeHint }}</span>
               </div>
             </div>
-            
-            <!-- 显示多个选中的表情 -->
-            <div class="selected-emojis">
-              <div class="section-header">
-                <h3>已选择的表情 <span class="counter-badge">{{ selectedEmojis.length }}</span></h3>
-                <button v-if="selectedEmojis.length > 0" @click="clearAllEmojis" class="action-button clear">
-                  清空
-                </button>
-              </div>
-              
-              <div v-if="selectedEmojis.length === 0" class="empty-list">
-                <div class="empty-icon">🔍</div>
-                <div>未选择任何表情</div>
-              </div>
-              <div v-else class="emoji-container">
-                <ul class="emoji-list">
-                  <li v-for="(emoji, index) in selectedEmojis" :key="index" class="emoji-list-item">
-                    <div class="emoji-list-content">
-                      <img 
-                        :src="`${configOptions.baseUrl}/icons/${emoji.style}/${emoji.path}`" 
-                        :alt="emoji.name"
-                        class="emoji-image"
-                      >
-                      <div class="emoji-details">
-                        <span class="emoji-name">{{ emoji.name }}</span>
-                        <span class="emoji-style-tag">{{ getStyleDisplayName(emoji.style) }}</span>
-                      </div>
-                    </div>
-                    <button class="remove-button" @click="removeEmoji(index)" title="移除">×</button>
-                  </li>
-                </ul>
-              </div>
+          </section>
+
+          <section class="current-config surface-card">
+            <div class="section-header">
+              <h3>{{ text.labels.currentConfig }}</h3>
+              <span class="code-label">JSON</span>
             </div>
-          </div>
+            <pre class="config-code">{{ configJson }}</pre>
+          </section>
         </div>
-        
-        <div class="notes">
-          <h3>配置选项说明</h3>
-          <div class="documentation">
-            <div class="doc-section">
-              <h4>基础配置</h4>
-              <dl class="doc-list">
-                <dt><code>initialStyle</code></dt>
-                <dd>初始表情风格（modern/flat/high-contrast），默认值: 'modern'</dd>
-                
-                <dt><code>buttonText</code></dt>
-                <dd>自定义按钮文本，默认值: '选择表情'</dd>
-                
-                <dt><code>disabled</code></dt>
-                <dd>是否禁用选择器，默认值: false</dd>
-                
-                <dt><code>closeOnSelect</code></dt>
-                <dd>选择表情后是否自动关闭面板，默认值: true</dd>
-                
-                <dt><code>showSelectedEmoji</code></dt>
-                <dd>是否在组件内显示选中表情区域，默认值: false</dd>
-              </dl>
+
+        <div class="preview-area">
+          <section class="preview-section surface-card">
+            <div class="section-header stacked">
+              <h3>{{ text.labels.previewTitle }}</h3>
+              <p>{{ text.labels.previewCopy }}</p>
             </div>
-            
-            <div class="doc-section">
-              <h4>布局配置</h4>
-              <dl class="doc-list">
-                <dt><code>width</code></dt>
-                <dd>选择器宽度，可以是数字或CSS宽度字符串，默认值: 280</dd>
-                
-                <dt><code>columns</code></dt>
-                <dd>表情显示的列数，默认值: 6</dd>
-              </dl>
+
+            <div class="picker-container">
+              <FluentEmojiPicker
+                :locale="locale"
+                :base-url="resolvedBaseUrl"
+                :initial-style="configOptions.initialStyle"
+                :button-text="configOptions.buttonText"
+                :disabled="configOptions.disabled"
+                :close-on-select="configOptions.closeOnSelect"
+                :show-selected-emoji="configOptions.showSelectedEmoji"
+                :width="configOptions.width"
+                :columns="configOptions.columns"
+                :auto-fill="configOptions.autoFill"
+                :emoji-size="configOptions.emojiSize"
+                :default-category="configOptions.defaultCategory"
+                :categories="resolvedCategories"
+                :preset="resolvedPreset"
+                :emoji-names="resolvedEmojiNames"
+                :show-search="configOptions.showSearch"
+                :render-batch-size="configOptions.renderBatchSize"
+                @select="handleSelectEmoji"
+                @clear="handleClearEmoji"
+              >
+                <template #trigger="{ toggleOpen, disabled }">
+                  <button type="button" class="emoji-pack-trigger" :disabled="disabled" @click="toggleOpen">
+                    <span class="emoji-pack-trigger__icon">😀</span>
+                    <span>{{ configOptions.buttonText }}</span>
+                  </button>
+                </template>
+              </FluentEmojiPicker>
             </div>
-            
-            <div class="doc-section">
-              <h4>内容配置</h4>
-              <dl class="doc-list">
-                <dt><code>defaultCategory</code></dt>
-                <dd>默认选中的表情类别，默认值: 'all'</dd>
-                
-                <dt><code>categories</code></dt>
-                <dd>要显示的表情分类列表，默认值: ['smileys', 'symbols', 'animals', 'food']</dd>
-              </dl>
+          </section>
+
+          <section class="selected-section surface-card">
+            <div class="section-header">
+              <h3>{{ text.labels.selectedList }}</h3>
+              <button v-if="selectedEmojis.length" type="button" class="action-button secondary" @click="clearAllEmojis">{{ text.labels.clearSelections }}</button>
             </div>
-            
-            <div class="doc-section">
-              <h4>高级配置</h4>
-              <dl class="doc-list">
-                <dt><code>baseUrl</code></dt>
-                <dd>表情图标CDN的基础URL，默认值: 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1'</dd>
-              </dl>
-            </div>
-          </div>
+
+            <div v-if="selectedEmojis.length === 0" class="empty-selection">{{ text.labels.emptySelection }}</div>
+
+            <ul v-else class="emoji-list">
+              <li v-for="(emoji, index) in selectedEmojis" :key="`${emoji.name}-${emoji.style}-${index}`" class="emoji-item">
+                <div class="emoji-item-content">
+                  <img :src="buildEmojiImageUrl(resolvedBaseUrl, emoji.style, emoji.path)" :alt="emoji.name" width="36" height="36" />
+                  <div>
+                    <strong>{{ emoji.name }}</strong>
+                    <p>{{ getCategoryName(emoji.category) }} / {{ emoji.style }}</p>
+                  </div>
+                </div>
+                <button type="button" class="remove-button" @click="removeEmoji(index)">×</button>
+              </li>
+            </ul>
+          </section>
         </div>
       </div>
-      
-      <!-- 右侧代码区域 -->
-      <div class="code-area">
-        <CodeBlock 
-          :code="fullConfigExampleCode" 
-          language="vue" 
-          title="完整配置示例" 
-          :floating="true" 
-        />
-      </div>
+
+      <section class="notes surface-card">
+        <h3>{{ text.labels.docs }}</h3>
+        <div class="docs-grid">
+          <div class="doc-section">
+            <h4>{{ text.tabs.basic }}</h4>
+            <ul><li v-for="item in text.docs.basic" :key="item">{{ item }}</li></ul>
+          </div>
+          <div class="doc-section">
+            <h4>{{ text.tabs.layout }}</h4>
+            <ul><li v-for="item in text.docs.layout" :key="item">{{ item }}</li></ul>
+          </div>
+          <div class="doc-section">
+            <h4>{{ text.tabs.content }}</h4>
+            <ul><li v-for="item in text.docs.content" :key="item">{{ item }}</li></ul>
+          </div>
+          <div class="doc-section">
+            <h4>{{ text.tabs.advanced }}</h4>
+            <ul><li v-for="item in text.docs.advanced" :key="item">{{ item }}</li></ul>
+          </div>
+        </div>
+      </section>
     </div>
+
+    <aside class="code-area">
+      <CodeBlock :locale="locale" language="vue" :title="text.codeTitle" :code="exampleCode" floating always-expanded />
+    </aside>
+  </div>
 </template>
 
 <style scoped>
-.example-container {
-  max-width: 1500px; /* 增加最大宽度 */
-  margin: 0 auto;
-  padding: 20px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.example-layout {
-  display: flex;
+.advanced-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 420px;
   gap: 24px;
 }
 
-.content-area {
-  flex: 1;
-  min-width: 0; /* 确保内容区域可以缩小 */
+.content-area,
+.config-area,
+.preview-area {
+  display: grid;
+  gap: 20px;
 }
 
-.code-area {
-  width: 32%;
-  min-width: 320px; /* 设置最小宽度 */
-}
-
-h2 {
-  margin-bottom: 20px;
-  color: #333;
-  text-align: center;
-  font-size: 1.5rem; /* 减小标题大小 */
-}
-
-h3 {
-  margin-top: 0;
-  color: #333;
-  font-weight: 600;
-}
-
-/* 布局容器 - 左右两栏 */
 .layout-container {
   display: grid;
-  grid-template-columns: minmax(300px, 2fr) 3fr;
-  gap: 24px;
-  margin-bottom: 30px;
-}
-
-@media (max-width: 768px) {
-  .layout-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* 左侧配置区域 */
-.config-area {
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(320px, 1.05fr);
   gap: 20px;
 }
 
-.config-panel {
-  background-color: white;
-  border-radius: 10px;
-  padding: 18px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.panel-actions {
-  display: flex;
-  gap: 10px;
-}
-
-/* 右侧预览区域 */
-.preview-area {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.preview-section {
-  background-color: white;
-  border-radius: 10px;
-  padding: 18px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
-
-.preview-title {
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.picker-container {
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-}
-
-/* 标签页设计优化 */
-.tabs {
-  position: relative;
-}
-
-.tab-headers {
-  display: flex;
-  margin-bottom: 15px;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tab-header {
-  padding: 8px 15px;
-  cursor: pointer;
-  background-color: #f5f5f5;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  color: #666;
-  transition: all 0.2s;
-}
-
-.tab-header.active {
-  background-color: #4a90e2;
-  color: white;
-}
-
-.tab-header:hover:not(.active) {
-  background-color: #e8e8e8;
-}
-
-.tab-content {
-  animation: fadeIn 0.3s;
-}
-
-/* 配置区域样式 */
-.config-section {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.config-group {
+.surface-card {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 16px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
-.config-group.vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.config-option {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.config-option label {
-  font-size: 14px;
-  color: #555;
-  font-weight: 500;
-}
-
-.subtle-label {
-  font-size: 13px;
-  color: #777;
-  margin-bottom: 6px;
-}
-
-/* 输入控件样式 */
-.text-input, .number-input, .select-input {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.text-input:focus, .number-input:focus, .select-input:focus {
-  border-color: #4a90e2;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
-}
-
-.input-with-unit {
-  display: flex;
-  align-items: stretch;
-}
-
-.input-with-unit input {
-  flex-grow: 1;
-  border-radius: 6px 0 0 6px;
-  border-right: none;
-}
-
-.unit {
-  background-color: #f0f0f0;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-left: none;
-  border-radius: 0 6px 6px 0;
-  color: #666;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-}
-
-/* 单选框组样式 */
-.radio-group {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.radio-text {
-  font-size: 14px;
-}
-
-/* 范围滑块样式 */
-.range-input {
-  width: 100%;
-  margin: 8px 0;
-  accent-color: #4a90e2;
-}
-
-.range-markers {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #888;
-  margin-top: 4px;
-}
-
-/* 复选框样式 */
-.checkbox-option {
-  margin-top: 8px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.checkbox-label span {
-  font-size: 14px;
-}
-
-/* 分类选择器样式 */
+.panel-header,
+.section-header,
 .categories-header {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 8px;
 }
 
-.small-button {
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
+.section-header.stacked {
+  display: grid;
+  justify-content: start;
+}
+
+.panel-header h3,
+.section-header h3,
+.notes h3,
+.doc-section h4 {
+  margin: 0;
+}
+
+.section-header.stacked p,
+.emoji-item-content p,
+.empty-selection,
+.hint-box p,
+.hint-box span {
+  margin: 0;
+  color: #64748b;
+}
+
+.tabs,
+.scope-mode-row,
+.tag-list,
+.categories-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab-header,
+.action-button,
+.small-button,
+.mode-button {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
   cursor: pointer;
 }
 
-.small-button:hover {
-  background: #e8e8e8;
+.tab-header,
+.mode-button {
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.tab-header.active,
+.mode-button.active {
+  background: #3b82f6;
+  border-color: #2563eb;
+  color: white;
+}
+
+.tab-content,
+.scope-block,
+.category-mode-block,
+.selected-tags {
+  display: grid;
+  gap: 14px;
+}
+
+.tab-content label {
+  display: grid;
+  gap: 8px;
+}
+
+.text-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.textarea-input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.checkbox-row,
+.category-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.small-button,
+.action-button {
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.action-button.secondary {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
-  max-height: 150px;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: white;
-  border: 1px solid #eee;
-  border-radius: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .category-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.selected-categories {
-  margin-top: 6px;
-}
-
-.selected-categories-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.selected-category-tag {
-  background-color: #e8f0fe;
-  color: #4a90e2;
-  border: 1px solid #c0d8f3;
-  border-radius: 16px;
-  padding: 4px 10px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.remove-tag {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  color: #4a90e2;
-}
-
-/* 注释文本 */
-.note {
-  font-size: 12px;
-  color: #888;
-  margin-top: 6px;
-}
-
-/* 当前配置展示 */
-.current-config {
-  background-color: #1e293b;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #0f172a;
+.hint-box {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
 }
 
-.current-config .section-header h3 {
-  color: white;
-  margin: 0;
+.hint-box.compact strong {
+  font-size: 13px;
 }
 
+.tag-chip,
 .code-label {
-  background-color: #334155;
-  color: #94a3b8;
-  padding: 2px 8px;
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
   font-size: 12px;
-  font-family: monospace;
 }
 
 .config-code {
   margin: 0;
   padding: 16px;
-  color: #e2e8f0;
-  font-family: monospace;
-  font-size: 13px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  text-align: left; /* 确保配置代码左对齐 */
-}
-
-/* 选中的表情列表 */
-.selected-emojis {
-  background-color: white;
   border-radius: 10px;
-  padding: 18px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  overflow: auto;
 }
 
-.selected-emojis .section-header {
-  background-color: #4a90e2; /* 使用蓝色背景 */
+.picker-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
 }
 
-.selected-emojis .section-header h3 {
-  color: white; /* 将"已选择的表情"文字改为白色 */
+.emoji-pack-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: white;
+  color: #111827;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
-.counter-badge {
-  background-color: white; /* 调整计数徽章为白底 */
-  color: #4a90e2; /* 蓝色文字 */
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 12px;
-  margin-left: 8px;
-}
-
-.empty-list {
-  color: #999;
-  text-align: center;
-  padding: 30px 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-}
-
-.empty-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
+.emoji-pack-trigger:disabled {
+  cursor: not-allowed;
   opacity: 0.6;
 }
 
-.emoji-container {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 4px;
-  margin-top: 10px;
+.emoji-pack-trigger__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #fef3c7;
+  font-size: 16px;
 }
 
 .emoji-list {
+  display: grid;
+  gap: 10px;
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  border-radius: 6px;
 }
 
-.emoji-list-item {
+.emoji-item {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  margin: 4px 0;
-  border-radius: 6px;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: all 0.2s;
-}
-
-.emoji-list-item:hover {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-  transform: translateY(-1px);
-}
-
-.emoji-list-content {
-  display: flex;
+  gap: 12px;
   align-items: center;
-  flex-grow: 1;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
 }
 
-.emoji-image {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+.emoji-item-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
 }
 
-.emoji-details {
-  margin-left: 10px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.emoji-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-}
-
-.emoji-style-tag {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
+.emoji-item-content img {
+  border-radius: 10px;
+  background: #f8fafc;
 }
 
 .remove-button {
-  background: none;
   border: none;
-  color: #dc3545;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0 5px;
-  opacity: 0.6;
-  transition: opacity 0.2s, transform 0.1s;
-  margin-left: 8px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.remove-button:hover {
-  opacity: 1;
-  background-color: #fee2e2;
-  transform: scale(1.1);
-}
-
-/* 按钮样式 */
-.action-button {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  border: none;
-  background-color: #f0f0f0;
-  color: #333;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: all 0.2s;
-}
-
-.action-button.reset {
-  background-color: #e8f0fe;
-  color: #4a90e2;
-}
-
-.action-button.reset:hover {
-  background-color: #d8e6fd;
-}
-
-.action-button.clear {
-  background-color: #fee2e2;
+  background: transparent;
   color: #ef4444;
-}
-
-.action-button.clear:hover {
-  background-color: #fecaca;
-}
-
-.value-badge {
-  display: inline-block;
-  background-color: #4a90e2;
-  color: white;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-left: 4px;
-}
-
-/* 选项说明部分 */
-.notes {
-  background-color: white;
-  border-radius: 10px;
-  padding: 18px;
-  margin-top: 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
-
-.notes h3 {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.documentation {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.doc-section {
-  margin-bottom: 16px;
-}
-
-.doc-section h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 16px;
-  color: #333;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #eee;
-}
-
-.doc-list {
-  margin: 0;
-}
-
-.doc-list dt {
-  font-family: monospace;
-  background-color: #f5f5f5;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  display: inline-block;
-  margin-bottom: 6px;
-  font-weight: bold;
-}
-
-.doc-list dd {
-  margin-left: 0;
-  margin-bottom: 16px;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.doc-list dd:last-child {
-  margin-bottom: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.custom-emoji-button {
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  font-size: 20px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  transition: background-color 0.2s;
 }
 
-.custom-emoji-button:hover {
-  background-color: #3a7bc8;
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
-.emoji-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.emoji-preview img {
-  border-radius: 4px;
-}
-
-/* 添加 CDN 信息显示样式 */
-.cdn-info {
-  background-color: #f9fafb;
-  border-radius: 6px;
-  padding: 10px 12px;
-  border: 1px dashed #cbd5e1;
-}
-
-.cdn-value {
-  font-family: monospace;
-  font-size: 13px;
-  color: #334155;
-  word-break: break-all;
-}
-
-.cdn-note {
-  margin-top: 6px;
-  font-size: 12px;
+.doc-section ul {
+  margin: 0;
+  padding-left: 18px;
   color: #64748b;
-  font-style: italic;
 }
 
-/* 添加样式 */
-.code-reference {
-  background-color: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  margin-top: 24px;
-}
-
-@media (max-width: 1400px) {
-  .example-layout {
-    flex-direction: column;
+@media (max-width: 1200px) {
+  .advanced-layout,
+  .layout-container {
+    grid-template-columns: 1fr;
   }
-  
-  .code-area {
-    width: 100%;
-    min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .categories-grid,
+  .docs-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

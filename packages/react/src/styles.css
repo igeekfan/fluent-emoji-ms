@@ -1,0 +1,133 @@
+.fem-picker {
+  position: relative;
+  display: inline-grid;
+  max-width: 100%;
+  justify-items: start;
+}
+
+.fem-trigger,
+.fem-chip,
+.fem-load-more,
+.fem-clear {
+  border: 1px solid #d0d7de;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fem-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.fem-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+.fem-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.fem-search,
+.fem-style {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+}
+
+.fem-categories {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.fem-chip {
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.fem-chip.is-active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
+
+.fem-grid-wrap {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.fem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 2px;
+}
+
+.fem-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 0;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.fem-cell:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.fem-empty {
+  padding: 20px 0;
+  color: #64748b;
+  text-align: center;
+}
+
+.fem-load-more {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.fem-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.fem-summary-style {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.fem-clear {
+  padding: 8px 10px;
+  border-radius: 10px;
+}

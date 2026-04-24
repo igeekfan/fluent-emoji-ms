@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { EmojiLocale } from '@fluent-emoji-ms/vue'
+import { getDemoMessages } from '../demo-locale'
 
 const props = defineProps({
   code: {
@@ -17,23 +19,44 @@ const props = defineProps({
   floating: {
     type: Boolean,
     default: false
+  },
+  locale: {
+    type: String as () => EmojiLocale,
+    default: 'zh-CN'
+  },
+  alwaysExpanded: {
+    type: Boolean,
+    default: false
   }
 })
 
-const copyStatus = ref('复制')
+const messages = computed(() => getDemoMessages(props.locale).codeBlock)
+const copyState = ref<'idle' | 'success' | 'error'>('idle')
 const isExpanded = ref(false)
+const showCode = computed(() => props.alwaysExpanded || isExpanded.value)
+const copyLabel = computed(() => {
+  if (copyState.value === 'success') {
+    return messages.value.copied
+  }
+
+  if (copyState.value === 'error') {
+    return messages.value.copyFailed
+  }
+
+  return messages.value.copy
+})
 
 function copyCode() {
   navigator.clipboard.writeText(props.code)
     .then(() => {
-      copyStatus.value = '已复制!'
+      copyState.value = 'success'
       setTimeout(() => {
-        copyStatus.value = '复制'
+        copyState.value = 'idle'
       }, 2000)
     })
     .catch(err => {
       console.error('无法复制:', err)
-      copyStatus.value = '复制失败'
+      copyState.value = 'error'
     })
 }
 
@@ -47,14 +70,14 @@ function toggleCode() {
     <div class="code-header">
       <div class="header-left">
         <span v-if="title" class="title">{{ title }}</span>
-        <button @click="toggleCode" class="toggle-button">
-          {{ isExpanded ? '收起代码' : '查看源码' }}
-          <span class="toggle-icon">{{ isExpanded ? '▲' : '▼' }}</span>
+        <button v-if="!alwaysExpanded" @click="toggleCode" class="toggle-button">
+          {{ showCode ? messages.hideCode : messages.viewSource }}
+          <span class="toggle-icon">{{ showCode ? '▲' : '▼' }}</span>
         </button>
       </div>
-      <button v-if="isExpanded" @click="copyCode" class="copy-button">{{ copyStatus }}</button>
+      <button v-if="showCode" @click="copyCode" class="copy-button">{{ copyLabel }}</button>
     </div>
-    <div class="code-container" v-show="isExpanded">
+    <div class="code-container" v-show="showCode">
       <pre class="code-content" :class="language"><code>{{ code }}</code></pre>
     </div>
   </div>
@@ -191,7 +214,7 @@ function toggleCode() {
   font-size: 0.9rem;
   line-height: 1.6;
   color: #e2e8f0;
-  white-space: pre-wrap;
+  white-space: pre;
   text-align: left;
 }
 

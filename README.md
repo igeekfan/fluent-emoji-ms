@@ -1,300 +1,341 @@
 # Fluent Emoji MS
 
-Vue 3 组件库，集成微软 Fluent UI 表情符号，提供易用的表情选择器组件，支持多种风格和丰富的自定义配置。
+<div align="right">
+	<strong>Language:</strong>
+	<a href="./README.md">简体中文</a>
+	<span> | </span>
+	<a href="./README.en.md">English</a>
+</div>
 
-## 特性
+Fluent Emoji MS 是一个面向 Vue、React、Svelte 的 Fluent UI Emoji 组件仓库。仓库采用 pnpm workspace 组织，核心数据与查询逻辑集中在 core 包中，三端组件共享同一套 emoji 数据、preset、搜索、分类过滤与图片地址规则。
 
-- 🎨 三种表情风格：现代风格 (modern)、扁平风格 (flat) 和高对比度风格 (high-contrast)
-- 🔍 内置表情搜索功能
-- 📂 按分类浏览表情
-- 📱 响应式设计，适配不同屏幕尺寸
-- ⚙️ 高度可定制的界面和样式
-- 🧩 支持表情分类排序
-- 🔄 智能图片加载错误处理
-- 💡 轻量级设计，零依赖
+预览站位于仓库根目录的 src/examples，当前实际使用的是 workspace 包本身，而不是旧的单体 src 组件实现。
+
+## 功能概览
+
+- 共享 core 数据层：emoji 数据、preset、分类过滤、搜索、render batching
+- 三端同名组件：FluentEmojiPicker、EmojiPicker
+- 内置三组 preset：basic、reactions、workflow
+- 支持 categories、preset、emojiNames 三种集合约束方式
+- 高阶组件支持宽度、搜索、风格切换、默认分类、选中摘要
+- 低阶组件支持业务方自定义工具栏、搜索框、分类栏和布局
+- Vue 额外提供 trigger 插槽，以及 FluentEmojiPlugin / useEmojiConfig 配置能力
+
+## 仓库结构
+
+| 路径 | 包名 | 作用 |
+| --- | --- | --- |
+| packages/core | @fluent-emoji-ms/core | 共享数据、查询、preset、类型与状态逻辑 |
+| packages/vue | @fluent-emoji-ms/vue | Vue 3 组件封装 |
+| packages/react | @fluent-emoji-ms/react | React 组件封装 |
+| packages/svelte | @fluent-emoji-ms/svelte | Svelte 组件封装 |
+| src/examples | - | 预览站示例与文档对照来源 |
 
 ## 安装
 
+### 使用仓库进行开发
+
 ```bash
-# npm
-npm install fluent-emoji-ms
+pnpm install
+pnpm dev
+```
 
-# yarn
-yarn add fluent-emoji-ms
+### 安装 Vue 包
 
-# pnpm
-pnpm add fluent-emoji-ms
+```bash
+pnpm add @fluent-emoji-ms/vue
+```
+
+```ts
+import '@fluent-emoji-ms/vue/style.css'
+```
+
+### 安装 React 包
+
+```bash
+pnpm add @fluent-emoji-ms/react
+```
+
+```ts
+import '@fluent-emoji-ms/react/style.css'
+```
+
+### 安装 Svelte 包
+
+```bash
+pnpm add @fluent-emoji-ms/svelte
+```
+
+```ts
+import '@fluent-emoji-ms/svelte/style.css'
+```
+
+### 只使用 core 能力
+
+```bash
+pnpm add @fluent-emoji-ms/core
 ```
 
 ## 快速开始
 
-### 导入和注册
-
-```js
-// 方式1：直接导入组件
-import { FluentEmojiPicker } from 'fluent-emoji-ms'
-import 'fluent-emoji-ms/style.css'  // 别忘记导入样式！
-
-// 方式2：全局注册
-import { FluentEmojiPicker } from 'fluent-emoji-ms'
-import 'fluent-emoji-ms/style.css'
-
-const app = createApp(App)
-app.use(FluentEmojiMS)
-app.mount('#app')
-```
-
-### 基本使用
+### Vue
 
 ```vue
-<template>
-  <div>
-    <FluentEmojiPicker @select="handleSelectEmoji" />
-    
-    <div v-if="selectedEmoji" class="selected-emoji-info">
-      <img 
-        :src="`https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1/icons/${selectedEmoji.style}/${selectedEmoji.path}`" 
-        width="32"
-        :alt="selectedEmoji.name"
-      />
-      <span>{{ selectedEmoji.name }}</span>
-    </div>
-  </div>
-</template>
-
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import { FluentEmojiPicker } from 'fluent-emoji-ms'
-import 'fluent-emoji-ms/style.css'
+import { FluentEmojiPicker, type EmojiItemWithStyle } from '@fluent-emoji-ms/vue'
+import '@fluent-emoji-ms/vue/style.css'
 
-const selectedEmoji = ref(null)
-
-function handleSelectEmoji(emoji) {
-  selectedEmoji.value = emoji
-  console.log('Selected emoji:', emoji)
-  // emoji 对象包含: { name, category, path, style }
-}
+const selectedEmoji = ref<EmojiItemWithStyle | null>(null)
 </script>
-```
 
-## 配置选项
-
-### 表情风格
-
-支持三种不同的表情风格，可以通过 `initialStyle` 属性设置默认风格:
-
-```vue
 <template>
-  <!-- 设置默认为扁平风格 -->
-  <FluentEmojiPicker initialStyle="flat" @select="handleSelectEmoji" />
+	<FluentEmojiPicker
+		preset="basic"
+		button-text="表情包"
+		@select="selectedEmoji = $event"
+	/>
 </template>
 ```
 
-可选风格:
-- `"modern"` - 现代风格（默认）
-- `"flat"` - 扁平风格
-- `"high-contrast"` - 高对比度风格
+### React
 
-### 自定义按钮
+```tsx
+import { useState } from 'react'
+import { FluentEmojiPicker, type EmojiItemWithStyle } from '@fluent-emoji-ms/react'
+import '@fluent-emoji-ms/react/style.css'
 
-```vue
-<template>
-  <!-- 自定义按钮文本 -->
-  <FluentEmojiPicker buttonText="插入表情" />
+export function App() {
+	const [selectedEmoji, setSelectedEmoji] = useState<EmojiItemWithStyle | null>(null)
 
-  <!-- 使用插槽自定义按钮 -->
-  <FluentEmojiPicker @select="handleSelectEmoji">
-    <button class="custom-button">😊 选择表情</button>
-  </FluentEmojiPicker>
-</template>
+	return (
+		<FluentEmojiPicker
+			preset="basic"
+			buttonText="Emoji Pack"
+			onSelect={setSelectedEmoji}
+		/>
+	)
+}
 ```
 
-### 完整配置示例
+### Svelte
 
-```vue
-<template>
-  <FluentEmojiPicker 
-    :disabled="false"
-    initialStyle="modern"
-    defaultCategory="all"
-    buttonText="选择表情"
-    :baseUrl="cdnUrl"
-    :width="320"
-    :columns="6"
-    :categories="['smileys', 'people-body', 'animals-nature']"
-    :closeOnSelect="true"
-    :showSelectedEmoji="true"
-    :autoFill="true"
-    :emojiSize="28"
-    @select="handleSelectEmoji"
-    @clear="handleClear"
-  />
-</template>
+```svelte
+<script lang="ts">
+	import { FluentEmojiPicker } from '@fluent-emoji-ms/svelte'
+	import '@fluent-emoji-ms/svelte/style.css'
 
-<script setup>
-const cdnUrl = 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1'
+	let selectedEmoji = null
 </script>
+
+<FluentEmojiPicker preset="basic" buttonText="Emoji Pack" on:select={(event) => (selectedEmoji = event.detail.emoji)} />
 ```
 
-## API 参考
+## 内置预设
 
-### FluentEmojiPicker
+| 预设 | 场景 | 说明 |
+| --- | --- | --- |
+| basic | 默认基础反馈 | 更大的基础表情集合，覆盖点赞、感谢、庆祝、常见心情和聊天高频反馈 |
+| reactions | 评论/聊天互动 | 评论区、IM、客服消息、轻互动反馈 |
+| workflow | 工作流状态 | 审批、发布、任务流转、状态看板 |
 
-#### Props
+集合优先级如下：
 
-| 属性名 | 类型 | 默认值 | 描述 |
-|--------|------|--------|------|
-| disabled | Boolean | false | 是否禁用选择器 |
-| initialStyle | String | 'modern' | 初始表情风格 ('modern'/'flat'/'high-contrast') |
-| defaultCategory | String | 'all' | 默认选中的表情分类 |
-| buttonText | String | '选择表情' | 按钮显示的文本 |
-| baseUrl | String | 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1' | 表情图标基础 URL |
-| width | Number/String | 320 | 选择器弹出框宽度 |
-| columns | Number | 6 | 固定列数 (仅当autoFill=false时生效) |
-| categories | Array | [...] | 要显示的表情分类 |
-| closeOnSelect | Boolean | true | 选择表情后是否关闭面板 |
-| showSelectedEmoji | Boolean | false | 是否显示选中的表情信息区域 |
-| autoFill | Boolean | true | 是否自动填充表情网格 |
-| emojiSize | Number | 28 | 表情图标大小(像素) |
+1. emojiNames
+2. preset
+3. categories
+4. defaultCategories
 
-#### Events
+当前 defaultCategories 为：smileys、animals、food、symbols。
 
-| 事件名 | 参数 | 描述 |
-|--------|------|------|
-| select | emojiWithStyle | 选中表情时触发，返回带样式的表情对象 |
-| clear | - | 清除选中表情时触发 |
+## FluentEmojiPicker
 
-#### 表情对象结构
+高阶组件，负责触发按钮、弹层、搜索、风格切换、分类切换、已选摘要与批量渲染。
 
-选中表情时返回的对象格式：
+### 共享 props
 
-```ts
-interface EmojiItemWithStyle {
-  name: string;       // 表情名称
-  category: string;   // 分类
-  path: string;       // 图片路径 (SVG 文件相对路径)
-  style: string;      // 风格 ('modern'/'flat'/'high-contrast')
-}
-```
+| 名称 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| disabled | boolean | false | 是否禁用选择器 |
+| initialStyle | string | modern | 初始风格 |
+| defaultCategory | string | all | 默认激活分类 |
+| buttonText | string | 本地化“选择表情” | 默认触发按钮文本 |
+| baseUrl | string | jsdelivr fluentui-emoji CDN | 图标基础地址 |
+| width | number \| string | 320 | 弹层面板宽度，只控制 popup，不拉伸触发按钮 |
+| categories | string[] | defaultCategories | 可见分类范围 |
+| preset | basic \| reactions \| workflow | - | 使用内置精选预设 |
+| emojiNames | string[] | - | 显式指定一组表情名，优先级高于 preset |
+| showSearch | boolean | true | 是否显示搜索框 |
+| closeOnSelect | boolean | true | 选择后是否关闭弹层 |
+| showSelectedEmoji | boolean | false | 是否显示选中摘要 |
+| emojiSize | number | 28 | 图标尺寸 |
+| columns | number | 6 | 固定列数，autoFill 为 false 时生效 |
+| autoFill | boolean | true | 是否根据面板宽度自动填充网格 |
+| renderBatchSize | number | 240 | 每次追加渲染数量 |
 
-## 样式定制
+### 事件
 
-### 使用 CSS 变量
+| 框架 | 事件 |
+| --- | --- |
+| Vue | @select、@clear |
+| React | onSelect、onClear |
+| Svelte | on:select、on:clear |
 
-组件使用了以下 CSS 变量，可以通过覆盖它们来自定义样式：
+### Vue 专有能力
 
-```css
-:root {
-  --emoji-picker-bg: white;
-  --emoji-picker-border: 1px solid #eee;
-  --emoji-picker-radius: 8px;
-  --emoji-picker-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  
-  --emoji-item-hover-bg: rgba(0, 0, 0, 0.05);
-  --emoji-active-color: #4d6af2;
-  
-  --emoji-button-bg: #f0f0f0;
-  --emoji-button-border: 1px solid #ccc;
-  --emoji-button-hover-bg: #e0e0e0;
-}
-```
+Vue 版本额外支持 trigger 插槽，用于把触发器换成业务自己的“表情包”按钮、工具栏按钮或输入框入口。
 
-### 自定义样式示例
+| 插槽 | 参数 |
+| --- | --- |
+| trigger | toggleOpen、isOpen、selectedEmoji、disabled |
+
+示例：
 
 ```vue
-<template>
-  <div class="dark-theme">
-    <FluentEmojiPicker @select="handleSelectEmoji" />
-  </div>
-</template>
-
-<style>
-.dark-theme {
-  --emoji-picker-bg: #2a2a2a;
-  --emoji-picker-border: 1px solid #444;
-  --emoji-picker-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  --emoji-item-hover-bg: rgba(255, 255, 255, 0.1);
-  --emoji-active-color: #7b96ff;
-  --emoji-button-bg: #3a3a3a;
-  --emoji-button-border: 1px solid #555;
-  --emoji-button-hover-bg: #4a4a4a;
-  
-  /* 添加额外的样式覆盖 */
-  --emoji-text-color: #eee;
-}
-
-.dark-theme .emoji-picker-button {
-  color: #eee;
-}
-
-.dark-theme .tab-button {
-  color: #ddd;
-}
-</style>
+<FluentEmojiPicker :width="320" button-text="表情包">
+	<template #trigger="{ toggleOpen, disabled }">
+		<button type="button" :disabled="disabled" @click="toggleOpen">
+			😀 表情包
+		</button>
+	</template>
+</FluentEmojiPicker>
 ```
 
-## 使用自定义 CDN 或本地图片
+### Vue 配置能力
 
-默认情况下，组件使用 jsdelivr CDN 加载表情图标。您可以通过设置 `baseUrl` 属性来使用其他 CDN 或本地图片：
+Vue 包还导出了：
 
-```vue
-<template>
-  <!-- 使用自定义CDN -->
-  <FluentEmojiPicker baseUrl="https://your-cdn.com/emoji-assets" />
-  
-  <!-- 使用本地图片 -->
-  <FluentEmojiPicker baseUrl="/assets/emojis" />
-</template>
+- FluentEmojiPlugin
+- useEmojiConfig
+- config
+- updateConfig
+
+这组能力用于注入和更新全局 CDN 配置，预览站中的 CDN 切换即基于它实现。
+
+## EmojiPicker
+
+低阶组件，只负责结果网格与加载更多，不负责触发按钮、搜索输入或分类工具栏。
+
+### 共享 props
+
+| 名称 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| baseUrl | string | jsdelivr fluentui-emoji CDN | 图标基础地址 |
+| width | number \| string | - | 限制低阶网格的最大宽度 |
+| selectedStyle | string | modern | 当前风格 |
+| categories | string[] | ['all'] | 可见分类范围 |
+| preset | basic \| reactions \| workflow | - | 使用内置预设 |
+| emojiNames | string[] | - | 显式指定一组表情名 |
+| selectedCategory | string | all | 当前激活分类 |
+| searchQuery | string | '' | 搜索词 |
+| emojiSize | number | 28 | 图标尺寸 |
+| columns | number | 6 | 固定列数，autoFill 为 false 时生效 |
+| autoFill | boolean | true | 是否自动填充网格 |
+| renderLimit | number | 240 | 当前渲染上限 |
+| renderBatchSize | number | 240 | 每批加载参考值 |
+
+### 事件
+
+| 框架 | 事件 |
+| --- | --- |
+| Vue | @select、@load-more |
+| React | onSelect、onLoadMore |
+| Svelte | on:select、on:loadMore |
+
+## Core 能力
+
+@fluent-emoji-ms/core 当前暴露：
+
+- emojiStyles
+- emojiCategories
+- defaultCategories
+- emojiPresets
+- defaultEmojiPreset
+- getEmojiPreset
+- getEmojiPresets
+- queryEmojis
+- filterCategories
+- buildEmojiImageUrl
+- createEmojiPickerState
+- DEFAULT_BASE_URL
+- DEFAULT_RENDER_BATCH_SIZE
+
+适合这些场景：
+
+- 自己写工具栏或业务布局，只复用查询和数据层
+- 只想自己拼接图片地址，不引入 UI 组件
+- 在服务端或测试环境中复用 preset、过滤和类型定义
+
+## 搜索与范围建议
+
+推荐按下面顺序决定范围：
+
+1. 先看 basic / reactions / workflow 是否已经覆盖你的入口场景。
+2. preset 不够时，再通过 categories 扩大范围。
+3. 只有在集合明显变大后，再打开 showSearch 或给 EmojiPicker 传 searchQuery。
+
+## 示例与预览站
+
+当前预览示例来源：
+
+- src/examples/SimpleEmojiPickerExample.vue
+- src/examples/EmojiPickerExample.vue
+- src/examples/FluentEmojiPickerExample.vue
+- src/examples/SlotCustomizationExample.vue
+- src/examples/EmojiMessengerApp.vue
+
+这些示例与本文档保持同步。
+
+## 开发命令
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm build:packages
+pnpm build:web
+pnpm test:core
+pnpm generate-emoji-list
+pnpm publish:packages
+pnpm release:packages
 ```
 
-图标目录结构需要符合以下格式：
+说明：
 
-```
-/icons
-  /modern
-    /smiling-face.svg
-    /...
-  /flat
-    /smiling-face.svg
-    /...
-  /high-contrast
-    /smiling-face.svg
-    /...
-```
+- pnpm build：构建全部包和预览站
+- pnpm build:packages：只构建 core / vue / react / svelte
+- pnpm build:web：只构建预览站
+- pnpm test:core：运行 core 测试
 
-## 可用的 CDN 资源
+## 一键发布 packages
 
-- jsDelivr: `https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1`
-- UNPKG: `https://unpkg.com/fluentui-emoji@1.1.1`
+当前 workspace 已提供统一发布入口，会按依赖顺序发布：
 
-示例 URL:
-- `https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1/icons/flat/smiling-face-with-hearts.svg`
+1. @fluent-emoji-ms/core
+2. @fluent-emoji-ms/vue
+3. @fluent-emoji-ms/react
+4. @fluent-emoji-ms/svelte
 
-## 常见问题解答
+常用命令：
 
-### 表情图片无法加载
-
-1. 确保您的网络可以访问配置的 CDN
-2. 如果遇到跨域问题，可以下载表情图标到本地使用
-3. 组件内置了图片加载失败处理，会自动尝试其他风格的图标
-
-### 自定义表情大小
-
-通过 `emojiSize` 属性调整表情大小：
-
-```vue
-<FluentEmojiPicker :emojiSize="36" />
+```bash
+pnpm publish:packages
+pnpm release:packages -- --bump patch --yes
+pnpm publish:packages -- --version 0.2.0 --tag next
+pnpm publish:packages -- --dry-run --skip-login --skip-git-check
 ```
 
-## 浏览器兼容性
+说明：
 
-- 支持所有现代浏览器
-- IE11 需要相应的 polyfills
+- pnpm publish:packages：执行统一多包发布脚本
+- pnpm release:packages：先运行 pnpm generate-emoji-list，再走发布流程
+- --bump patch|minor|major：统一提升 root 和四个 packages 的版本号
+- --version x.y.z：直接指定要发布的版本号
+- --yes：跳过交互确认，适合 CI 或真正的一键执行
+- --tag next：发布到指定 npm tag
+- --dry-run：只打印将要执行的命令，不真正发包
+- --skip-test、--skip-build、--skip-login、--skip-git-check：按需跳过对应步骤
 
-## 示例
-
-访问[示例页面](https://igeekfan.github.io/fluent-emoji-ms/)查看更多使用示例。
-
-## 许可证
+## License
 
 MIT

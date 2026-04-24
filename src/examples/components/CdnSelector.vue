@@ -1,118 +1,118 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue'
+import type { EmojiLocale } from '@fluent-emoji-ms/vue'
+import { getDemoMessages } from '../demo-locale'
 
-// 组件属性
-const props = defineProps({
-  // 当前选中的 CDN URL
-  modelValue: {
-    type: String,
-    required: true
-  },
-  // 是否显示测试按钮
-  showTestButton: {
-    type: Boolean,
-    default: true
-  }
-});
+const props = withDefaults(defineProps<{
+  modelValue: string
+  showTestButton?: boolean
+  locale?: EmojiLocale
+}>(), {
+  showTestButton: true,
+  locale: 'zh-CN'
+})
 
-// 事件
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 
-// 预设 CDN 选项
-const cdnOptions = [
-  { 
-    name: 'JSDelivr', 
+const messages = computed(() => getDemoMessages(props.locale).cdnSelector)
+const cdnOptions = computed(() => [
+  {
+    name: messages.value.jsDelivr.name,
     value: 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1',
-    description: '性能优秀的全球 CDN'
+    description: messages.value.jsDelivr.description
   },
-  { 
-    name: 'UNPKG', 
+  {
+    name: messages.value.unpkg.name,
     value: 'https://unpkg.com/fluentui-emoji@1.1.1',
-    description: '由 Cloudflare 提供的 CDN'
+    description: messages.value.unpkg.description
   },
-  { 
-    name: '自定义 CDN', 
+  {
+    name: messages.value.custom.name,
     value: 'custom',
-    description: '自定义 CDN URL'
+    description: messages.value.custom.description
   }
-];
+])
 
-// 当前选择的 CDN
-const selectedCdn = ref(findInitialCdn());
-// 自定义 CDN URL
-const customCdnUrl = ref(isCustomUrl() ? props.modelValue : '');
-// CDN 加载状态
-const cdnTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle');
-// 测试用的图片
-const testImageSrc = ref('');
+const selectedCdn = ref(findInitialCdn())
+const customCdnUrl = ref(isCustomUrl() ? props.modelValue : '')
+const cdnTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
+const testImageSrc = ref('')
 
-// 从初始值找到匹配的 CDN 选项
 function findInitialCdn() {
-  const matchedCdn = cdnOptions.find(cdn => cdn.value === props.modelValue);
-  return matchedCdn ? matchedCdn.value : 'custom';
+  const matchedCdn = cdnOptions.value.find((cdn) => cdn.value === props.modelValue)
+  return matchedCdn ? matchedCdn.value : 'custom'
 }
 
-// 判断当前 URL 是否为自定义 URL
 function isCustomUrl() {
-  return !cdnOptions.some(cdn => cdn.value === props.modelValue && cdn.value !== 'custom');
+  return !cdnOptions.value.some((cdn) => cdn.value === props.modelValue && cdn.value !== 'custom')
 }
 
-// 计算当前实际使用的 CDN URL
 const actualCdnUrl = computed(() => {
-  return selectedCdn.value === 'custom' ? customCdnUrl.value : selectedCdn.value;
-});
+  return selectedCdn.value === 'custom' ? customCdnUrl.value : selectedCdn.value
+})
 
-// 更新 CDN 值
+const testStatusLabel = computed(() => {
+  if (cdnTestStatus.value === 'testing') {
+    return messages.value.testing
+  }
+
+  if (cdnTestStatus.value === 'success') {
+    return messages.value.success
+  }
+
+  if (cdnTestStatus.value === 'error') {
+    return messages.value.error
+  }
+
+  return messages.value.testIdle
+})
+
 function updateCdnValue() {
-  emit('update:modelValue', actualCdnUrl.value);
+  emit('update:modelValue', actualCdnUrl.value)
 }
 
-// 监听选择变化
 watch(selectedCdn, () => {
-  updateCdnValue();
-});
+  updateCdnValue()
+})
 
-// 监听自定义 URL 变化
 watch(customCdnUrl, () => {
   if (selectedCdn.value === 'custom') {
-    updateCdnValue();
+    updateCdnValue()
   }
-});
+})
 
-// 测试 CDN 连接
 function testCdnConnection() {
-  cdnTestStatus.value = 'testing';
-  
-  // 生成随机表情测试路径
+  cdnTestStatus.value = 'testing'
+
   const testEmojis = [
     'smiling-face.svg',
     'grinning-face.svg',
     'face-with-tears-of-joy.svg',
     'partying-face.svg'
-  ];
-  const randomEmoji = testEmojis[Math.floor(Math.random() * testEmojis.length)];
-  const timestamp = new Date().getTime(); // 防止缓存
-  
-  // 构建测试图片 URL
-  testImageSrc.value = `${actualCdnUrl.value}/icons/flat/${randomEmoji}?t=${timestamp}`;
-  
-  // 创建图片元素测试加载
-  const img = new Image();
+  ]
+  const randomEmoji = testEmojis[Math.floor(Math.random() * testEmojis.length)]
+  const timestamp = new Date().getTime()
+
+  testImageSrc.value = `${actualCdnUrl.value}/icons/flat/${randomEmoji}?t=${timestamp}`
+
+  const img = new Image()
   img.onload = () => {
-    cdnTestStatus.value = 'success';
+    cdnTestStatus.value = 'success'
     setTimeout(() => {
-      cdnTestStatus.value = 'idle';
-    }, 3000);
-  };
-  
+      cdnTestStatus.value = 'idle'
+    }, 3000)
+  }
+
   img.onerror = () => {
-    cdnTestStatus.value = 'error';
+    cdnTestStatus.value = 'error'
     setTimeout(() => {
-      cdnTestStatus.value = 'idle';
-    }, 3000);
-  };
-  
-  img.src = testImageSrc.value;
+      cdnTestStatus.value = 'idle'
+    }, 3000)
+  }
+
+  img.src = testImageSrc.value
 }
 </script>
 
@@ -143,7 +143,7 @@ function testCdnConnection() {
         <input 
           type="text" 
           v-model="customCdnUrl" 
-          placeholder="输入自定义 CDN URL"
+          :placeholder="messages.customPlaceholder"
           class="cdn-input"
         />
       </div>
@@ -154,25 +154,24 @@ function testCdnConnection() {
           class="test-cdn-button"
           :disabled="cdnTestStatus === 'testing'"
         >
-          <span v-if="cdnTestStatus === 'idle'">测试连接</span>
-          <span v-else-if="cdnTestStatus === 'testing'">测试中...</span>
-          <span v-else-if="cdnTestStatus === 'success'" class="success-message">成功 ✓</span>
-          <span v-else-if="cdnTestStatus === 'error'" class="error-message">失败 ✗</span>
+          <span :class="{ 'success-message': cdnTestStatus === 'success', 'error-message': cdnTestStatus === 'error' }">
+            {{ testStatusLabel }}
+          </span>
         </button>
         
         <div v-if="cdnTestStatus === 'success'" class="test-result success">
           <img :src="testImageSrc" alt="Test Emoji" class="test-image" />
-          <span>CDN 连接正常</span>
+          <span>{{ messages.successMessage }}</span>
         </div>
         
         <div v-if="cdnTestStatus === 'error'" class="test-result error">
-          无法加载表情图片，请检查 URL 或网络连接
+          {{ messages.errorMessage }}
         </div>
       </div>
     </div>
     
     <div class="current-cdn">
-      <span class="label">当前 URL:</span>
+      <span class="label">{{ messages.currentUrl }}</span>
       <span class="value">{{ actualCdnUrl }}</span>
     </div>
   </div>

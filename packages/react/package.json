@@ -1,6 +1,6 @@
 {
   "name": "@igeekfan/fluent-emoji-ms-react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/fluent-emoji-ms-react.js",
   "module": "./dist/fluent-emoji-ms-react.js",

@@ -16,6 +16,7 @@ import CodeBlock from './components/CodeBlock.vue'
 
 type ConfigTab = 'basic' | 'layout' | 'content' | 'advanced'
 type ScopeMode = 'default' | 'preset' | 'categories' | 'emojiNames'
+type SearchMode = 'toggle' | 'inline' | 'hidden'
 
 const tabs: ConfigTab[] = ['basic', 'layout', 'content', 'advanced']
 const scopeModes: ScopeMode[] = ['default', 'preset', 'categories', 'emojiNames']
@@ -73,6 +74,12 @@ const text = computed(() => props.locale === 'en-US'
         emojiNamesHelp: 'When emojiNames are active, one emoji name per line is supported.',
         emojiCount: 'Active emoji names',
         showSearch: 'Show Search',
+        searchMode: 'Search Mode',
+        showStyleSelect: 'Show Style Menu',
+        showCategoryTabs: 'Show Category Tabs',
+        showCommonCategory: 'Show Common Tab',
+        persistRecent: 'Remember Recent',
+        recentLimit: 'Recent Limit',
         renderBatchSize: 'Render Batch',
         useCustomBaseUrl: 'Override baseUrl',
         baseUrl: 'Emoji CDN',
@@ -147,6 +154,12 @@ const text = computed(() => props.locale === 'en-US'
         emojiNamesHelp: '切到 emojiNames 模式后，这里支持逐行输入明确的表情名称。',
         emojiCount: '当前生效的 emojiNames',
         showSearch: '显示搜索框',
+        searchMode: '搜索模式',
+        showStyleSelect: '显示风格菜单',
+        showCategoryTabs: '显示分类图标栏',
+        showCommonCategory: '显示常用入口',
+        persistRecent: '记住最近使用',
+        recentLimit: '最近数量',
         renderBatchSize: '批量渲染数量',
         useCustomBaseUrl: '覆盖 baseUrl',
         baseUrl: '表情 CDN',
@@ -188,6 +201,17 @@ const text = computed(() => props.locale === 'en-US'
 const localizedStyles = computed(() => getEmojiStyles(props.locale))
 const presetMap = computed(() => getEmojiPresets(props.locale))
 const presetOptions = computed(() => Object.values(presetMap.value))
+const searchModeOptions = computed(() => props.locale === 'en-US'
+  ? [
+      { value: 'toggle' as SearchMode, label: 'Icon Toggle' },
+      { value: 'inline' as SearchMode, label: 'Inline Input' },
+      { value: 'hidden' as SearchMode, label: 'Hidden' }
+    ]
+  : [
+      { value: 'toggle' as SearchMode, label: '图标展开' },
+      { value: 'inline' as SearchMode, label: '直接显示' },
+      { value: 'hidden' as SearchMode, label: '隐藏' }
+    ])
 const currentPreset = computed(() => presetMap.value[selectedPreset.value])
 const availableCategories = computed(() => filterCategories(['all'], props.locale).filter((category) => category.value !== 'all'))
 const normalizedEmojiNames = computed(() => Array.from(new Set(
@@ -211,6 +235,12 @@ function createDefaultConfig() {
     defaultCategory: 'all',
     categories: [...defaultCategories],
     showSearch: true,
+    searchMode: 'toggle' as SearchMode,
+    showStyleSelect: true,
+    showCategoryTabs: true,
+    showCommonCategory: true,
+    persistRecent: true,
+    recentLimit: 12,
     renderBatchSize: 120
   }
 }
@@ -302,6 +332,12 @@ const configJson = computed(() => JSON.stringify({
   ...(resolvedPreset.value ? { preset: resolvedPreset.value } : {}),
   ...(resolvedEmojiNames.value ? { emojiNames: resolvedEmojiNames.value } : {}),
   showSearch: configOptions.showSearch,
+  searchMode: configOptions.searchMode,
+  showStyleSelect: configOptions.showStyleSelect,
+  showCategoryTabs: configOptions.showCategoryTabs,
+  showCommonCategory: configOptions.showCommonCategory,
+  persistRecent: configOptions.persistRecent,
+  recentLimit: configOptions.recentLimit,
   renderBatchSize: configOptions.renderBatchSize
 }, null, 2))
 
@@ -335,6 +371,12 @@ const exampleCode = computed(() => {
   }
 
   lines.push(`  :show-search="${configOptions.showSearch}"`)
+  lines.push(`  search-mode="${configOptions.searchMode}"`)
+  lines.push(`  :show-style-select="${configOptions.showStyleSelect}"`)
+  lines.push(`  :show-category-tabs="${configOptions.showCategoryTabs}"`)
+  lines.push(`  :show-common-category="${configOptions.showCommonCategory}"`)
+  lines.push(`  :persist-recent="${configOptions.persistRecent}"`)
+  lines.push(`  :recent-limit="${configOptions.recentLimit}"`)
   lines.push(`  :render-batch-size="${configOptions.renderBatchSize}"`)
   lines.push('  @select="handleSelectEmoji"')
   lines.push('>')
@@ -547,6 +589,15 @@ function removeEmoji(index: number) {
               </div>
 
               <label class="checkbox-row"><input v-model="configOptions.showSearch" type="checkbox" /> <span>{{ text.labels.showSearch }}</span></label>
+              <label>
+                <span>{{ text.labels.searchMode }}</span>
+                <select v-model="configOptions.searchMode" class="text-input" :disabled="!configOptions.showSearch">
+                  <option v-for="mode in searchModeOptions" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
+                </select>
+              </label>
+              <label class="checkbox-row"><input v-model="configOptions.showStyleSelect" type="checkbox" /> <span>{{ text.labels.showStyleSelect }}</span></label>
+              <label class="checkbox-row"><input v-model="configOptions.showCategoryTabs" type="checkbox" /> <span>{{ text.labels.showCategoryTabs }}</span></label>
+              <label class="checkbox-row"><input v-model="configOptions.showCommonCategory" type="checkbox" /> <span>{{ text.labels.showCommonCategory }}</span></label>
             </div>
 
             <div v-else class="tab-content">
@@ -555,6 +606,14 @@ function removeEmoji(index: number) {
                 <input v-model.number="configOptions.renderBatchSize" type="range" min="60" max="240" step="30" />
                 <strong>{{ configOptions.renderBatchSize }}</strong>
               </label>
+
+              <label>
+                <span>{{ text.labels.recentLimit }}</span>
+                <input v-model.number="configOptions.recentLimit" type="range" min="4" max="24" step="1" />
+                <strong>{{ configOptions.recentLimit }}</strong>
+              </label>
+
+              <label class="checkbox-row"><input v-model="configOptions.persistRecent" type="checkbox" /> <span>{{ text.labels.persistRecent }}</span></label>
 
               <label class="checkbox-row"><input v-model="useCustomBaseUrl" type="checkbox" /> <span>{{ text.labels.useCustomBaseUrl }}</span></label>
 
@@ -605,6 +664,12 @@ function removeEmoji(index: number) {
                 :preset="resolvedPreset"
                 :emoji-names="resolvedEmojiNames"
                 :show-search="configOptions.showSearch"
+                :search-mode="configOptions.searchMode"
+                :show-style-select="configOptions.showStyleSelect"
+                :show-category-tabs="configOptions.showCategoryTabs"
+                :show-common-category="configOptions.showCommonCategory"
+                :persist-recent="configOptions.persistRecent"
+                :recent-limit="configOptions.recentLimit"
                 :render-batch-size="configOptions.renderBatchSize"
                 @select="handleSelectEmoji"
                 @clear="handleClearEmoji"

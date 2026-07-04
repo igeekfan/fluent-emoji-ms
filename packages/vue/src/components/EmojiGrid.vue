@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { buildEmojiImageUrl, type EmojiItem } from '@igeekfan/fluent-emoji-ms-core'
-import { computed } from 'vue'
+import { computed, shallowRef } from 'vue'
 
 const props = withDefaults(defineProps<{
   items: EmojiItem[]
@@ -19,6 +19,7 @@ const emit = defineEmits<{
   select: [emoji: EmojiItem]
 }>()
 
+const loadedImageKeys = shallowRef(new Set<string>())
 const cellSize = computed(() => Math.max(props.emojiSize + 4, 32))
 const gridStyle = computed(() => {
   if (props.autoFill) {
@@ -36,6 +37,16 @@ const gridStyle = computed(() => {
 const cellStyle = computed(() => ({
   minHeight: `${cellSize.value}px`
 }))
+
+function getImageKey(item: EmojiItem) {
+  return `${props.baseUrl}:${props.styleValue}:${item.path}`
+}
+
+function markImageLoaded(item: EmojiItem) {
+  const nextKeys = new Set(loadedImageKeys.value)
+  nextKeys.add(getImageKey(item))
+  loadedImageKeys.value = nextKeys
+}
 </script>
 
 <template>
@@ -49,12 +60,21 @@ const cellStyle = computed(() => ({
       :style="cellStyle"
       @click="emit('select', item)"
     >
+      <span
+        v-if="!loadedImageKeys.has(getImageKey(item))"
+        class="emoji-placeholder"
+        aria-hidden="true"
+      />
       <img
         :src="buildEmojiImageUrl(baseUrl, styleValue, item.path)"
         :alt="item.name"
         class="emoji-image"
+        :class="{ loaded: loadedImageKeys.has(getImageKey(item)) }"
         :style="{ width: `${emojiSize}px`, height: `${emojiSize}px` }"
         loading="lazy"
+        decoding="async"
+        @load="markImageLoaded(item)"
+        @error="markImageLoaded(item)"
       />
     </button>
   </div>
@@ -67,6 +87,7 @@ const cellStyle = computed(() => ({
 }
 
 .emoji-cell {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -84,6 +105,40 @@ const cellStyle = computed(() => ({
 }
 
 .emoji-image {
+  position: relative;
   display: block;
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.emoji-image.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.emoji-placeholder {
+  position: absolute;
+  width: 68%;
+  height: 68%;
+  border-radius: 9px;
+  background:
+    linear-gradient(110deg, rgba(226, 232, 240, 0.7) 8%, rgba(248, 250, 252, 0.95) 18%, rgba(226, 232, 240, 0.7) 33%);
+  background-size: 200% 100%;
+  animation: emoji-placeholder-shimmer 1.1s linear infinite;
+}
+
+@keyframes emoji-placeholder-shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emoji-image,
+  .emoji-placeholder {
+    transition: none;
+    animation: none;
+  }
 }
 </style>

@@ -12,6 +12,15 @@ export interface FluentEmojiPickerProps {
   preset?: EmojiPresetKey
   emojiNames?: string[]
   showSearch?: boolean
+  searchMode?: 'toggle' | 'inline' | 'hidden'
+  showStyleSelect?: boolean
+  showCategoryTabs?: boolean
+  showCommonCategory?: boolean
+  commonEmojiNames?: string[]
+  recentEmojiNames?: string[]
+  recentLimit?: number
+  persistRecent?: boolean
+  storageKey?: string
   closeOnSelect?: boolean
   showSelectedEmoji?: boolean
   emojiSize?: number

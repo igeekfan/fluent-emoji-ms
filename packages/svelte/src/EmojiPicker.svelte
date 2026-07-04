@@ -50,6 +50,16 @@
     ? `grid-template-columns: repeat(auto-fill, minmax(${cellSize}px, 1fr));`
     : `grid-template-columns: repeat(${columns}, ${cellSize}px); justify-content: center;`
   $: cellStyle = `min-height: ${cellSize}px;`
+
+  let loadedImageKeys = new Set<string>()
+
+  function getImageKey(emoji: EmojiItem) {
+    return `${baseUrl}:${selectedStyle}:${emoji.path}`
+  }
+
+  function markImageLoaded(emoji: EmojiItem) {
+    loadedImageKeys = new Set(loadedImageKeys).add(getImageKey(emoji))
+  }
 </script>
 
 <div class="emoji-picker-panel" style={panelStyle}>
@@ -58,7 +68,20 @@
       <div class="emoji-grid" style={gridStyle}>
         {#each emojiResult.items as emoji}
           <button type="button" class="emoji-cell" title={emoji.name} style={cellStyle} on:click={() => dispatch('select', { emoji })}>
-            <img src={buildEmojiImageUrl(baseUrl, selectedStyle, emoji.path)} alt={emoji.name} width={emojiSize} height={emojiSize} loading="lazy" />
+            {#if !loadedImageKeys.has(getImageKey(emoji))}
+              <span class="emoji-placeholder" aria-hidden="true"></span>
+            {/if}
+            <img
+              src={buildEmojiImageUrl(baseUrl, selectedStyle, emoji.path)}
+              alt={emoji.name}
+              width={emojiSize}
+              height={emojiSize}
+              loading="lazy"
+              decoding="async"
+              class:loaded={loadedImageKeys.has(getImageKey(emoji))}
+              on:load={() => markImageLoaded(emoji)}
+              on:error={() => markImageLoaded(emoji)}
+            />
           </button>
         {/each}
       </div>
@@ -89,6 +112,7 @@
   }
 
   .emoji-cell {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -105,6 +129,36 @@
     background: rgba(15, 23, 42, 0.06);
   }
 
+  .emoji-cell img {
+    position: relative;
+    display: block;
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  .emoji-cell img.loaded {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .emoji-placeholder {
+    position: absolute;
+    width: 68%;
+    height: 68%;
+    border-radius: 9px;
+    background:
+      linear-gradient(110deg, rgba(226, 232, 240, 0.7) 8%, rgba(248, 250, 252, 0.95) 18%, rgba(226, 232, 240, 0.7) 33%);
+    background-size: 200% 100%;
+    animation: emoji-placeholder-shimmer 1.1s linear infinite;
+  }
+
+  @keyframes emoji-placeholder-shimmer {
+    to {
+      background-position-x: -200%;
+    }
+  }
+
   .empty-state {
     padding: 20px 0;
     color: #64748b;
@@ -118,5 +172,13 @@
     border-radius: 10px;
     background: #fff;
     cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .emoji-cell img,
+    .emoji-placeholder {
+      transition: none;
+      animation: none;
+    }
   }
 </style>

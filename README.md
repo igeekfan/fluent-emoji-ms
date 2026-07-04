@@ -15,9 +15,9 @@ Fluent Emoji MS 是一个面向 Vue、React、Svelte 的 Fluent UI Emoji 组件�
 
 - 共享 core 数据层：emoji 数据、preset、分类过滤、搜索、render batching
 - 三端同名组件：FluentEmojiPicker、EmojiPicker
-- 内置三组 preset：basic、reactions、workflow
+- 内置四组 preset：common、basic、reactions、workflow
 - 支持 categories、preset、emojiNames 三种集合约束方式
-- 高阶组件支持宽度、搜索、风格切换、默认分类、选中摘要
+- 高阶组件支持常用/最近入口、分类图标栏、折叠搜索、风格菜单、默认分类、选中摘要
 - 低阶组件支持业务方自定义工具栏、搜索框、分类栏和布局
 - Vue 额外提供 trigger 插槽，以及 FluentEmojiPlugin / useEmojiConfig 配置能力
 
@@ -135,7 +135,8 @@ export function App() {
 
 | 预设 | 场景 | 说明 |
 | --- | --- | --- |
-| basic | 默认基础反馈 | 更大的基础表情集合，覆盖点赞、感谢、庆祝、常见心情和聊天高频反馈 |
+| common | 常用入口 | 精简的一屏常用集合，适合默认打开后的快速选择 |
+| basic | 基础反馈 | 更大的基础表情集合，覆盖点赞、感谢、庆祝、常见心情和聊天高频反馈 |
 | reactions | 评论/聊天互动 | 评论区、IM、客服消息、轻互动反馈 |
 | workflow | 工作流状态 | 审批、发布、任务流转、状态看板 |
 
@@ -163,15 +164,24 @@ export function App() {
 | baseUrl | string | jsdelivr fluentui-emoji CDN | 图标基础地址 |
 | width | number \| string | 320 | 弹层面板宽度，只控制 popup，不拉伸触发按钮 |
 | categories | string[] | defaultCategories | 可见分类范围 |
-| preset | basic \| reactions \| workflow | - | 使用内置精选预设 |
+| preset | common \| basic \| reactions \| workflow | - | 使用内置精选预设 |
 | emojiNames | string[] | - | 显式指定一组表情名，优先级高于 preset |
-| showSearch | boolean | true | 是否显示搜索框 |
+| showSearch | boolean | true | 是否启用搜索能力 |
+| searchMode | toggle \| inline \| hidden | toggle | 搜索入口显示方式，默认图标展开 |
+| showStyleSelect | boolean | true | 是否显示风格更多菜单 |
+| showCategoryTabs | boolean | true | 是否显示分类图标栏 |
+| showCommonCategory | boolean | true | 是否显示常用 tab |
+| commonEmojiNames | string[] | common preset | 自定义常用 tab 的表情集合 |
+| recentEmojiNames | string[] | - | 外部接管最近使用集合 |
+| recentLimit | number | 12 | 最近使用最多保留数量 |
+| persistRecent | boolean | true | 是否用 localStorage 记住最近使用 |
+| storageKey | string | fluent-emoji-ms:recent | 最近使用的 localStorage key |
 | closeOnSelect | boolean | true | 选择后是否关闭弹层 |
 | showSelectedEmoji | boolean | false | 是否显示选中摘要 |
 | emojiSize | number | 28 | 图标尺寸 |
 | columns | number | 6 | 固定列数，autoFill 为 false 时生效 |
 | autoFill | boolean | true | 是否根据面板宽度自动填充网格 |
-| renderBatchSize | number | 240 | 每次追加渲染数量 |
+| renderBatchSize | number | 96 | 每次追加渲染数量，默认控制在较小批量以降低首屏图片压力 |
 
 ### 事件
 
@@ -224,15 +234,15 @@ Vue 包还导出了：
 | width | number \| string | - | 限制低阶网格的最大宽度 |
 | selectedStyle | string | modern | 当前风格 |
 | categories | string[] | ['all'] | 可见分类范围 |
-| preset | basic \| reactions \| workflow | - | 使用内置预设 |
+| preset | common \| basic \| reactions \| workflow | - | 使用内置预设 |
 | emojiNames | string[] | - | 显式指定一组表情名 |
 | selectedCategory | string | all | 当前激活分类 |
 | searchQuery | string | '' | 搜索词 |
 | emojiSize | number | 28 | 图标尺寸 |
 | columns | number | 6 | 固定列数，autoFill 为 false 时生效 |
 | autoFill | boolean | true | 是否自动填充网格 |
-| renderLimit | number | 240 | 当前渲染上限 |
-| renderBatchSize | number | 240 | 每批加载参考值 |
+| renderLimit | number | 96 | 当前渲染上限 |
+| renderBatchSize | number | 96 | 每批加载参考值 |
 
 ### 事件
 
@@ -270,9 +280,9 @@ Vue 包还导出了：
 
 推荐按下面顺序决定范围：
 
-1. 先看 basic / reactions / workflow 是否已经覆盖你的入口场景。
+1. 先看 common / basic / reactions / workflow 是否已经覆盖你的入口场景。
 2. preset 不够时，再通过 categories 扩大范围。
-3. 只有在集合明显变大后，再打开 showSearch 或给 EmojiPicker 传 searchQuery。
+3. 只有在集合明显变大后，再把 searchMode 设为 inline，或给 EmojiPicker 传 searchQuery。
 
 ## 示例与预览站
 

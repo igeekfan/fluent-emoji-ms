@@ -10,6 +10,10 @@ import {
 } from './index'
 
 describe('queryEmojis', () => {
+  it('keeps the default render batch small enough for image-heavy first paint', () => {
+    expect(DEFAULT_RENDER_BATCH_SIZE).toBeLessThanOrEqual(120)
+  })
+
   it('limits category results and reports when more items remain', () => {
     const result = queryEmojis({
       categories: ['activities'],
@@ -39,6 +43,17 @@ describe('queryEmojis', () => {
 
     expect(result.items.map((item) => item.name)).toEqual(getEmojiPreset('workflow').emojiNames)
     expect(result.hasMore).toBe(false)
+  })
+
+  it('supports a common preset for compact picker defaults', () => {
+    const preset = getEmojiPreset('common')
+    const result = queryEmojis({
+      preset: 'common'
+    })
+
+    expect(preset.label).toBe('常用')
+    expect(result.items.map((item) => item.name)).toEqual(preset.emojiNames)
+    expect(result.total).toBeLessThan(30)
   })
 
   it('supports explicit emoji name collections with category filtering', () => {

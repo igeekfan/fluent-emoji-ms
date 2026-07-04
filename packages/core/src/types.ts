@@ -14,7 +14,7 @@ export interface EmojiCategory {
   icon?: string
 }
 
-export type EmojiPresetKey = 'basic' | 'reactions' | 'workflow'
+export type EmojiPresetKey = 'common' | 'basic' | 'reactions' | 'workflow'
 
 export interface EmojiPreset {
   key: EmojiPresetKey

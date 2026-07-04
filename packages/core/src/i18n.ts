@@ -36,6 +36,10 @@ const localeMessages: Record<EmojiLocale, EmojiLocaleMessages> = {
       'high-contrast': '高对比'
     },
     presets: {
+      common: {
+        label: '常用',
+        description: '面向聊天和评论入口的精简常用集合，优先保证一屏内快速选择。'
+      },
       basic: {
         label: '常用反馈',
         description: '覆盖点赞、感谢、庆祝、常见心情和聊天高频反馈，适合作为默认入口。'
@@ -83,6 +87,10 @@ const localeMessages: Record<EmojiLocale, EmojiLocaleMessages> = {
       'high-contrast': 'High Contrast'
     },
     presets: {
+      common: {
+        label: 'Common',
+        description: 'A compact first-screen set for fast picks in chat and comment entry points.'
+      },
       basic: {
         label: 'Everyday Feedback',
         description: 'A broader starter pack for likes, thanks, celebration, common moods, and frequent chat reactions.'

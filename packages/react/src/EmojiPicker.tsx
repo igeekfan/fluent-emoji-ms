@@ -9,7 +9,7 @@ import {
   type EmojiPresetKey,
   type EmojiItem
 } from '@igeekfan/fluent-emoji-ms-core'
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import './styles.css'
 
 export interface EmojiPickerProps {
@@ -48,6 +48,7 @@ export function EmojiPicker({
   onSelect,
   onLoadMore
 }: EmojiPickerProps) {
+  const [loadedImageKeys, setLoadedImageKeys] = useState(() => new Set<string>())
   const messages = useMemo(() => getEmojiMessages(locale), [locale])
   const emojiResult = useMemo(
     () => queryEmojis({ categories, preset, emojiNames, selectedCategory, search: searchQuery, limit: renderLimit }),
@@ -65,6 +66,20 @@ export function EmojiPicker({
     ? { gridTemplateColumns: `repeat(auto-fill, minmax(${cellSize}px, 1fr))` }
     : { gridTemplateColumns: `repeat(${columns}, ${cellSize}px)`, justifyContent: 'center' }
   const cellStyle: CSSProperties = { minHeight: `${cellSize}px` }
+  const getImageKey = (emoji: EmojiItem) => `${baseUrl}:${selectedStyle}:${emoji.path}`
+
+  function markImageLoaded(emoji: EmojiItem) {
+    const imageKey = getImageKey(emoji)
+    setLoadedImageKeys((currentKeys) => {
+      if (currentKeys.has(imageKey)) {
+        return currentKeys
+      }
+
+      const nextKeys = new Set(currentKeys)
+      nextKeys.add(imageKey)
+      return nextKeys
+    })
+  }
 
   return (
     <div className="fem-picker-panel" style={panelStyle}>
@@ -72,22 +87,34 @@ export function EmojiPicker({
         {emojiResult.items.length ? (
           <div className="fem-grid" style={gridStyle}>
             {emojiResult.items.map((emoji) => (
-              <button
-                key={emoji.name}
-                type="button"
-                className="fem-cell"
-                title={emoji.name}
-                style={cellStyle}
-                onClick={() => onSelect?.(emoji)}
-              >
-                <img
-                  src={buildEmojiImageUrl(baseUrl, selectedStyle, emoji.path)}
-                  alt={emoji.name}
-                  width={emojiSize}
-                  height={emojiSize}
-                  loading="lazy"
-                />
-              </button>
+              (() => {
+                const imageKey = getImageKey(emoji)
+                const isLoaded = loadedImageKeys.has(imageKey)
+
+                return (
+                  <button
+                    key={emoji.name}
+                    type="button"
+                    className="fem-cell"
+                    title={emoji.name}
+                    style={cellStyle}
+                    onClick={() => onSelect?.(emoji)}
+                  >
+                    {!isLoaded ? <span className="fem-placeholder" aria-hidden="true" /> : null}
+                    <img
+                      src={buildEmojiImageUrl(baseUrl, selectedStyle, emoji.path)}
+                      alt={emoji.name}
+                      width={emojiSize}
+                      height={emojiSize}
+                      loading="lazy"
+                      decoding="async"
+                      className={`fem-image ${isLoaded ? 'is-loaded' : ''}`}
+                      onLoad={() => markImageLoaded(emoji)}
+                      onError={() => markImageLoaded(emoji)}
+                    />
+                  </button>
+                )
+              })()
             ))}
           </div>
         ) : (

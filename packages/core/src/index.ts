@@ -36,7 +36,7 @@ export type {
 }
 
 export const DEFAULT_BASE_URL = 'https://cdn.jsdelivr.net/npm/fluentui-emoji@1.1.1'
-export const DEFAULT_RENDER_BATCH_SIZE = 240
+export const DEFAULT_RENDER_BATCH_SIZE = 96
 export const defaultCategories = ['smileys', 'animals', 'food', 'symbols']
 
 type IndexedEmoji = EmojiItem & {

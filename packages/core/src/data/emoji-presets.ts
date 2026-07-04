@@ -1,9 +1,36 @@
 import { defaultEmojiLocale, getEmojiLocaleMessages } from '../i18n'
 import type { EmojiLocale, EmojiPreset, EmojiPresetKey } from '../types'
 
-export const defaultEmojiPreset: EmojiPresetKey = 'basic'
+export const defaultEmojiPreset: EmojiPresetKey = 'common'
 
 export const emojiPresets: Record<EmojiPresetKey, EmojiPreset> = {
+  common: {
+    key: 'common',
+    label: '常用',
+    description: '面向聊天和评论入口的精简常用集合，优先保证一屏内快速选择。',
+    emojiNames: [
+      'Thumbs Up Default',
+      'Red Heart',
+      'Face With Tears Of Joy',
+      'Rolling On The Floor Laughing',
+      'Smiling Face With Heart Eyes',
+      'Thinking Face',
+      'Clapping Hands Default',
+      'Folded Hands Default',
+      'Fire',
+      'Sparkles',
+      'Party Popper',
+      'Hundred Points',
+      'Eyes',
+      'Ok Hand Default',
+      'Victory Hand Default',
+      'Check Mark Button',
+      'Cross Mark',
+      'Pleading Face',
+      'Loudly Crying Face',
+      'Star Struck'
+    ]
+  },
   basic: {
     key: 'basic',
     label: '常用反馈',
